@@ -1,3 +1,0 @@
-{
-  "buildCommand": "node scripts/check-env.mjs"
-}
