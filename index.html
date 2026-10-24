@@ -1,0 +1,2907 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SignalDesk ISP</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2a6dd9">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="SignalDesk">
+<meta name="mobile-web-app-capable" content="yes">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+<script src="/api/config"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/3.46.0/tabler-icons.min.css">
+<style>
+:root{
+  --bg:#f4f5f7; --panel:#ffffff; --border:#e2e4e9; --border-strong:#c7cbd4;
+  --text:#171a21; --text-2:#5a5f6b; --text-3:#8a8f9b;
+  --accent:#2a6dd9; --accent-bg:#e8f0fd; --accent-dark:#184c9e;
+  --green:#1a9e63; --green-bg:#e6f7ee;
+  --amber:#c98500; --amber-bg:#fdf3e0;
+  --red:#d0392f; --red-bg:#fbe9e8;
+  --gray:#6b6f78; --gray-bg:#eef0f3;
+  --radius:8px; --radius-lg:12px;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--text);font-size:14px;}
+button{font-family:inherit;cursor:pointer;}
+input,select,textarea{font-family:inherit;font-size:14px;}
+.hidden{display:none !important;}
+
+/* ===== LOGIN ===== */
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);}
+.login-card{width:340px;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px;text-align:center;}
+.login-logo{width:56px;height:56px;border-radius:12px;background:var(--accent-bg);color:var(--accent-dark);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;margin:0 auto 14px;}
+.login-card h1{font-size:18px;margin:0 0 4px;}
+.login-card p{color:var(--text-2);font-size:13px;margin:0 0 20px;}
+.field{text-align:left;margin-bottom:12px;}
+.field label{display:block;font-size:12px;color:var(--text-2);margin-bottom:4px;}
+.field input,.field select{width:100%;padding:9px 10px;border:1px solid var(--border-strong);border-radius:var(--radius);background:#fff;}
+.btn{padding:9px 14px;border-radius:var(--radius);border:1px solid var(--border-strong);background:#fff;font-size:13px;font-weight:600;color:var(--text);}
+.btn:hover{background:#f7f8fa;}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent-dark);}
+.btn-block{width:100%;}
+.login-err{color:var(--red);font-size:12px;margin-top:8px;min-height:16px;}
+.demo-accounts{margin-top:16px;padding-top:14px;border-top:1px solid var(--border);font-size:11px;color:var(--text-3);line-height:1.6;}
+
+/* ===== APP SHELL ===== */
+#app{display:none;min-height:100vh;grid-template-columns:220px 1fr;}
+#app.show{display:grid;}
+#sidebar{background:var(--panel);border-right:1px solid var(--border);padding:16px 12px;display:flex;flex-direction:column;}
+.brand-row{display:flex;align-items:center;gap:10px;padding:6px 8px 18px;}
+.brand-logo{width:36px;height:36px;border-radius:8px;background:var(--accent-bg);color:var(--accent-dark);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;overflow:hidden;flex-shrink:0;}
+.brand-logo img{width:100%;height:100%;object-fit:cover;}
+.brand-name{font-weight:600;font-size:15px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--radius);color:var(--text-2);font-size:13.5px;font-weight:500;cursor:pointer;margin-bottom:2px;}
+.nav-item i{font-size:17px;width:18px;text-align:center;}
+.nav-item:hover{background:var(--gray-bg);}
+.nav-item.active{background:var(--accent-bg);color:var(--accent-dark);}
+.nav-spacer{flex:1;}
+.role-box{border-top:1px solid var(--border);padding-top:12px;margin-top:8px;}
+.role-user{display:flex;align-items:center;gap:8px;padding:6px 8px;}
+.role-avatar{width:28px;height:28px;border-radius:50%;background:var(--gray-bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text-2);}
+.role-meta{line-height:1.3;}
+.role-meta .rn{font-size:12.5px;font-weight:600;}
+.role-meta .rr{font-size:11px;color:var(--text-3);text-transform:capitalize;}
+.logout-btn{width:100%;margin-top:8px;font-size:12.5px;padding:7px;}
+
+#main{padding:22px 28px;overflow-x:hidden;}
+.page{display:none;}
+.page.show{display:block;}
+.page-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.page-title{font-size:20px;font-weight:600;margin:0;}
+.page-sub{font-size:13px;color:var(--text-2);margin:2px 0 0;}
+
+.period-toggle{display:flex;border:1px solid var(--border-strong);border-radius:var(--radius);overflow:hidden;}
+.period-toggle button{border:none;background:#fff;padding:7px 14px;font-size:12.5px;font-weight:600;color:var(--text-2);border-right:1px solid var(--border-strong);}
+.period-toggle button:last-child{border-right:none;}
+.period-toggle button.active{background:var(--accent);color:#fff;}
+
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.metric-label{font-size:12px;color:var(--text-2);margin-bottom:6px;}
+.metric-val{font-size:22px;font-weight:700;}
+.metric-sub{font-size:11.5px;color:var(--text-3);margin-top:4px;}
+.tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
+.tag-green{background:var(--green-bg);color:var(--green);}
+.tag-amber{background:var(--amber-bg);color:var(--amber);}
+.tag-red{background:var(--red-bg);color:var(--red);}
+.tag-gray{background:var(--gray-bg);color:var(--gray);}
+.tag-blue{background:var(--accent-bg);color:var(--accent-dark);}
+
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;font-size:11.5px;color:var(--text-3);text-transform:uppercase;letter-spacing:.02em;padding:8px 10px;border-bottom:1px solid var(--border);}
+td{padding:10px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+.icon-btn{width:30px;height:30px;border-radius:7px;border:1px solid var(--border-strong);background:#fff;display:inline-flex;align-items:center;justify-content:center;color:var(--text-2);margin-right:4px;}
+.icon-btn:hover{background:var(--gray-bg);}
+.icon-btn.disabled{opacity:.35;pointer-events:none;}
+.ic-wa{color:var(--green);}
+.ic-msg{color:var(--accent);}
+.ic-sms{color:var(--amber);}
+
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:14px;}
+.search-box{flex:1;position:relative;max-width:280px;}
+.search-box input{width:100%;padding:8px 10px 8px 32px;border:1px solid var(--border-strong);border-radius:var(--radius);}
+.search-box i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-3);font-size:15px;}
+
+.modal-bg{position:fixed;inset:0;background:rgba(20,22,28,.45);display:none;align-items:flex-start;justify-content:center;padding-top:60px;z-index:50;}
+.modal-bg.show{display:flex;}
+.modal{width:420px;max-height:80vh;overflow-y:auto;background:var(--panel);border-radius:var(--radius-lg);padding:20px 22px;}
+.modal h3{margin:0 0 14px;font-size:16px;}
+.modal .field{margin-bottom:10px;}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;}
+
+.empty-note{color:var(--text-3);font-size:13px;padding:20px 0;text-align:center;}
+
+/* calendar */
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+.cal-dow{font-size:11px;color:var(--text-3);text-align:center;padding-bottom:4px;font-weight:600;}
+.cal-cell{min-height:64px;border:1px solid var(--border);border-radius:7px;padding:5px;font-size:11px;background:#fff;}
+.cal-cell.empty{background:transparent;border:none;}
+.cal-date{font-weight:600;color:var(--text-2);margin-bottom:3px;}
+.cal-due{font-size:10px;background:var(--amber-bg);color:var(--amber);border-radius:4px;padding:1px 4px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+.perm-note{background:var(--gray-bg);color:var(--text-2);font-size:12px;border-radius:var(--radius);padding:10px 12px;margin-bottom:14px;}
+
+/* ===== MOBILE TOPBAR (hidden on desktop) ===== */
+#mobile-topbar{display:none;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--panel);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:30;}
+.hamburger-btn{width:38px;height:38px;border-radius:8px;border:1px solid var(--border-strong);background:#fff;display:flex;align-items:center;justify-content:center;font-size:19px;color:var(--text-2);flex-shrink:0;}
+.mobile-brand{font-weight:600;font-size:15px;flex:1;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 8px;}
+#sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(20,22,28,.42);z-index:55;}
+#sidebar-overlay.show{display:block;}
+
+/* ===== TABLET / MOBILE RESPONSIVE ===== */
+@media (max-width: 900px){
+  .grid-4{grid-template-columns:repeat(2,1fr);}
+}
+@media (max-width: 768px){
+  #app{grid-template-columns:1fr;display:flex;flex-direction:column;}
+  #app.show{display:flex;}
+  #mobile-topbar{display:flex;}
+  #sidebar{
+    position:fixed;top:0;left:0;bottom:0;width:250px;max-width:80vw;
+    transform:translateX(-100%);transition:transform .22s ease;
+    z-index:60;box-shadow:3px 0 16px rgba(20,22,28,.18);
+    padding-top:14px;
+  }
+  #sidebar.open{transform:translateX(0);}
+  .nav-item{padding:12px 10px;font-size:14.5px;}
+  #main{padding:14px 14px 90px;}
+  .page-head{flex-direction:column;align-items:flex-start;gap:10px;}
+  .page-head > *:last-child{width:100%;}
+  .grid-4{grid-template-columns:repeat(2,1fr);gap:10px;}
+  .grid-2{grid-template-columns:1fr;gap:12px;}
+  .metric-val{font-size:19px;}
+  .card{padding:14px;}
+  table{font-size:12.5px;}
+  th,td{padding:9px 7px;}
+  .icon-btn{width:36px;height:36px;}
+  .btn{padding:10px 14px;font-size:13.5px;}
+  .search-box{max-width:none;width:100%;}
+  .toolbar{flex-wrap:wrap;}
+  .modal-bg{padding-top:0;align-items:flex-end;}
+  .modal{width:100%;max-width:100%;max-height:88vh;border-radius:16px 16px 0 0;padding:18px 16px 22px;}
+  .cal-cell{min-height:48px;font-size:10px;padding:4px;}
+  .cal-due{font-size:9px;}
+  .login-card{width:92vw;max-width:340px;padding:22px 18px;}
+  .period-toggle button{padding:8px 12px;}
+}
+@media (max-width: 420px){
+  .grid-4{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo" id="login-logo">SD</div>
+    <h1 id="login-title">SignalDesk</h1>
+    <p>Sign in to your workspace</p>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="login-username" placeholder="you@example.com" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="Enter password" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary btn-block" id="login-submit-btn" onclick="handleLogin()" disabled>Loading…</button>
+    <button class="btn btn-block" id="login-passkey-btn" onclick="handleLoginWithPasskey()" style="margin-top:8px;display:none;"><i class="ti ti-fingerprint" aria-hidden="true"></i> Sign in with passkey</button>
+    <div class="login-err" id="login-error"></div>
+    <div class="demo-accounts" id="demo-accounts"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div id="mobile-topbar">
+    <button class="hamburger-btn" onclick="toggleSidebar()" aria-label="Open menu"><i class="ti ti-menu-2" aria-hidden="true"></i></button>
+    <div class="mobile-brand" id="mobile-brand-name"></div>
+    <div style="width:38px;"></div>
+  </div>
+  <div id="sidebar-overlay" onclick="closeSidebar()"></div>
+  <div id="sidebar"></div>
+  <div id="main"></div>
+</div>
+
+<div class="modal-bg" id="modal-bg"><div class="modal" id="modal-body"></div></div>
+
+<script>
+/* ============ SUPABASE CONFIG ============ */
+/* Public, environment-specific values come from /api/config (served from the deployment's own env vars SUPABASE_URL and
+   SUPABASE_ANON_KEY). No project reference or key is stored in this file. Only the public anon key is ever sent to the browser. */
+const SIGNALDESK_CFG = window.SIGNALDESK_CONFIG || {};
+const SUPABASE_URL = SIGNALDESK_CFG.SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = SIGNALDESK_CFG.SUPABASE_ANON_KEY || '';
+let sb = null;
+let SUPABASE_READY = false;
+try{
+  const looksConfigured = SUPABASE_URL && SUPABASE_ANON_KEY
+    && SUPABASE_URL.indexOf('YOUR_SUPABASE') === -1
+    && /^https?:\/\//.test(SUPABASE_URL);
+  if(looksConfigured){
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { experimental: { passkey: true } } // beta feature — requires enabling in Supabase Dashboard too
+    });
+    SUPABASE_READY = true;
+  }
+}catch(e){
+  console.error('Supabase client failed to initialize. Check SUPABASE_URL / SUPABASE_ANON_KEY.', e);
+}
+const STATE_ROW_ID = 'main';
+
+/* ============ STORAGE HELPERS ============ */
+let DATA = null;
+
+function defaultData(){
+  return {
+    business: {
+      name: 'SignalDesk', logo: '', accentColor: '#2a6dd9',
+      // Settings -> Payment Information (GCash). Stored the same way the
+      // business logo already is (a plain URL or data-URI string) -- no new
+      // storage infrastructure introduced, per HQ instruction.
+      paymentInfo: { gcashQrUrl:'', gcashName:'', gcashNumber:'', instructions:'' }
+    },
+    // Settings -> Reports & Notifications (monthly Investor email report).
+    investorReport: { email:'', enabled:false, sendOnDay:1, lastSentAt:null, lastSentPeriod:null },
+    plans: [
+      { name:'30 Mbps', rate:500 },
+      { name:'50 Mbps', rate:700 },
+      { name:'100 Mbps', rate:1500 }
+    ],
+    subscribers: [
+      { id:'s1', name:'Marco Reyes', address:'12 Rizal St, Antipolo', email:'marco.reyes@example.com', phone:'+639171234501', whatsapp:'+639171234501', fb:'facebook.com/marco.reyes', messenger:'m.me/marco.reyes', plan:'50 Mbps', rate:700, due:'2026-09-05', status:'paid', archived:false, disconnectedAt:null, ownership:'unassigned', accountUsername:'', napNumber:'', ponNumber:'', connectionDate:null },
+      { id:'s2', name:'Liza Cruz', address:'45 Mabini Ave, Antipolo', email:'liza.cruz@example.com', phone:'+639171234502', whatsapp:'+639171234502', fb:'facebook.com/liza.cruz', messenger:'m.me/liza.cruz', plan:'30 Mbps', rate:500, due:'2026-09-10', status:'pending', archived:false, disconnectedAt:null, ownership:'unassigned', accountUsername:'', napNumber:'', ponNumber:'', connectionDate:null },
+      { id:'s3', name:'Jun Santos', address:'8 Bonifacio Rd, Antipolo', email:'jun.santos@example.com', phone:'+639171234503', whatsapp:'+639171234503', fb:'facebook.com/jun.santos', messenger:'m.me/jun.santos', plan:'100 Mbps', rate:1500, due:'2026-09-02', status:'paid', archived:false, disconnectedAt:null, ownership:'unassigned', accountUsername:'', napNumber:'', ponNumber:'', connectionDate:null },
+      { id:'s4', name:'Ana Villareal', address:'21 Aguinaldo St, Antipolo', email:'ana.villareal@example.com', phone:'+639171234504', whatsapp:'+639171234504', fb:'facebook.com/ana.villareal', messenger:'m.me/ana.villareal', plan:'50 Mbps', rate:700, due:'2026-09-18', status:'pending', archived:false, disconnectedAt:null, ownership:'unassigned', accountUsername:'', napNumber:'', ponNumber:'', connectionDate:null },
+      { id:'s5', name:'Pedro Lim', address:'3 Luna St, Antipolo', email:'pedro.lim@example.com', phone:'+639171234505', whatsapp:'+639171234505', fb:'facebook.com/pedro.lim', messenger:'m.me/pedro.lim', plan:'30 Mbps', rate:500, due:'2026-09-22', status:'pending', archived:false, disconnectedAt:null, ownership:'unassigned', accountUsername:'', napNumber:'', ponNumber:'', connectionDate:null },
+      { id:'s6', name:'Grace Tan', address:'17 Del Pilar St, Antipolo', email:'grace.tan@example.com', phone:'+639171234506', whatsapp:'+639171234506', fb:'facebook.com/grace.tan', messenger:'m.me/grace.tan', plan:'100 Mbps', rate:1500, due:'2026-09-14', status:'paid', archived:false, disconnectedAt:null, ownership:'unassigned', accountUsername:'', napNumber:'', ponNumber:'', connectionDate:null },
+      { id:'s7', name:'Robert Ong', address:'29 Quezon Ave, Antipolo', email:'robert.ong@example.com', phone:'+639171234507', whatsapp:'+639171234507', fb:'facebook.com/robert.ong', messenger:'m.me/robert.ong', plan:'50 Mbps', rate:700, due:'2026-08-01', status:'disconnected', archived:false, disconnectedAt:'2026-08-01', ownership:'unassigned', accountUsername:'', napNumber:'', ponNumber:'', connectionDate:null }
+    ],
+    payments: [
+      { id:'p1', subscriberId:'s1', amount:700, date:'2026-08-05', method:'GCash', archived:false },
+      { id:'p2', subscriberId:'s3', amount:1500, date:'2026-08-02', method:'Cash', archived:false },
+      { id:'p3', subscriberId:'s6', amount:1500, date:'2026-08-14', method:'GCash', archived:false }
+    ],
+    expenses: [
+      { id:'e1', description:'MikroTik router lease', amount:4500, date:'2026-08-03', category:'Equipment' },
+      { id:'e2', description:'Fiber bandwidth (upstream)', amount:6000, date:'2026-08-01', category:'Bandwidth' },
+      { id:'e3', description:'Field tech transport', amount:1500, date:'2026-08-10', category:'Operations' }
+    ],
+    messageTemplate: 'Hi {name}, this is a friendly reminder that your {plan} SignalDesk bill of PHP {rate} is due on {due}. Please settle at your earliest convenience. Thank you!',
+    announcementTemplate: 'Hi {name}, this is an announcement from {business}: ',
+    auditLog: []
+  };
+}
+
+/* ============ HANDOFF #002: SAFE, NON-DESTRUCTIVE FIELD BACKFILL ============
+   Existing production records (real subscribers/payments/expenses saved
+   before this update) will be missing the new fields below. Per HQ's
+   "no destructive migration / no silent historical reinterpretation" rule,
+   this only ever ADDS defaults in memory on load -- it never rewrites or
+   deletes anything, and it is safe to run every time the app starts.
+
+   DUE-DATE INVESTIGATION FINDING (Handoff #002 Section 10): the existing
+   `due` field has always stored the subscriber's CURRENT/NEXT due date,
+   not a fixed original connection date -- confirmed by confirmPayment()
+   advancing it by one month on every payment. Its day-of-month is already,
+   in effect, the recurring billing day. So "billingDay" is DERIVED from
+   `due` on the fly (billingDayOf()) rather than stored separately, which
+   avoids creating a second source of truth that could drift out of sync.
+   `connectionDate` is a genuinely new, separate, optional field -- left
+   blank for existing subscribers rather than guessed, exactly as required. */
+/* BILLING-BEGIN (single source of truth for billing math; copied verbatim into index.html, api/daily-status-check.js, api/sync-sheets.js; tests assert identical copies) */
+var BILL = (function(){
+  var OVERDUE_AFTER_DAYS = 5, STALE_DAYS = 45, MAX_BACKLOG_DAYS = 1100;
+  function pad(n){ return n<10 ? '0'+n : ''+n; }
+  function parse(d){ return { y:+d.slice(0,4), m:+d.slice(5,7), d:+d.slice(8,10) }; }
+  function fmt(y,m,d){ return y+'-'+pad(m)+'-'+pad(d); }
+  function dim(y,m){ return new Date(Date.UTC(y,m,0)).getUTCDate(); }
+  function dueFor(bd,y,m){ return fmt(y,m,Math.min(bd,dim(y,m))); }
+  function addMonths(y,m,n){ var t=y*12+(m-1)+n; return { y:Math.floor(t/12), m:(t%12)+1 }; }
+  function dayNum(d){ var p=parse(d); return Math.round(Date.UTC(p.y,p.m-1,p.d)/86400000); }
+  function daysBetween(a,b){ return dayNum(b)-dayNum(a); }
+  function addDays(d,n){ var t=new Date((dayNum(d)+n)*86400000); return fmt(t.getUTCFullYear(),t.getUTCMonth()+1,t.getUTCDate()); }
+  function dueAfter(bd,d){ var p=parse(d), n=addMonths(p.y,p.m,1); return dueFor(bd,n.y,n.m); }
+  function nextDueOnOrAfter(bd,today){ var p=parse(today), c=dueFor(bd,p.y,p.m); if(c>=today) return c; var n=addMonths(p.y,p.m,1); return dueFor(bd,n.y,n.m); }
+  function dayOf(d){ return d ? parse(d).d : null; }
+  function toC(n){ var v=Math.round(Number(n)*100); return isFinite(v) ? v : 0; }
+  function fromC(c){ return (c||0)/100; }
+  function splitThree(totalC){ var b=Math.floor(totalC/3); return [b,b,totalC-2*b]; }  // remainder -> last installment
+  function paidC(it){ var s=0; (it.applied||[]).forEach(function(a){ s+=a.c; }); return s; }
+  function remC(it){ return it.amountC - paidC(it); }
+  function find(b,id){ for(var i=0;i<b.obligations.length;i++) if(b.obligations[i].id===id) return b.obligations[i]; return null; }
+  function frozen(s){ return s.status==='disconnected' || s.archived || s.permanentlyDeleted; }
+  function limitOf(b,today){ return b.billingDay ? nextDueOnOrAfter(b.billingDay,today) : today; }
+  function billed(b,it,today){ return it.kind==='opening' || it.dueDate <= limitOf(b,today); }
+
+  function newBilling(o){
+    return { v:1, billingDay:o.billingDay||null, firstDue:o.firstDue||null, review:!!o.review,
+      opening:{ state:(o.openingState||'none') },            // none | verified-zero | verified-positive | unverified
+      obligations:[], creditC:0, installation:null, extensionLog:[], migration:o.migration||null };
+  }
+  function setOpening(s,state,amountC,today,by){
+    var b=s.billing; b.opening.state=state;
+    var ex=find(b,'opening:1');
+    if(state==='verified-positive' && amountC>0){
+      if(ex){ if(paidC(ex)>0) return {ok:false,error:'Opening balance already has payments applied'}; ex.amountC=amountC; }
+      else b.obligations.unshift({ id:'opening:1', kind:'opening', dueDate:null, amountC:amountC, applied:[], notified:{}, at:today, by:by||null });
+    } else if(ex){ if(paidC(ex)>0) return {ok:false,error:'Opening balance already has payments applied'}; b.obligations.splice(b.obligations.indexOf(ex),1); }
+    return {ok:true};
+  }
+  // ---- Rate history (T2): effective-dated, stored in s.billing.rateHistory = [{from,rateC,at,by,basis}] ----
+  // A charge uses the rate in force on its due date. Without a recorded rate for a PAST period the amount is NOT inferred:
+  // the charge carries rateReview (placeholder = current rate) and no notice is sent until the operator confirms the amount.
+  function rateEntries(b){ return (b.rateHistory||[]).slice().sort(function(x,y){ return x.from<y.from?-1:x.from>y.from?1:0; }); }
+  function rateFor(s,date,today){
+    var e=rateEntries(s.billing), hit=null; e.forEach(function(x){ if(x.from<=date) hit=x; });
+    if(hit) return {c:hit.rateC,known:true};
+    return {c:toC(s.rate),known:date>=today};
+  }
+  function seedRate(s,from,basis,by){ var b=s.billing; if(!b) return; if(!b.rateHistory) b.rateHistory=[];
+    if(!b.rateHistory.length){ b.rateHistory.push({from:from,rateC:toC(s.rate),at:from,by:by||null,basis:basis||'baseline'}); b.lastRateC=toC(s.rate); } }
+  // Record a rate change with an effective date (today or later). Already-generated charges are never changed.
+  function setRate(s,newRate,from,today,by){
+    var b=s.billing; var nc=toC(newRate);
+    if(!(nc>0)) return {ok:false,error:'Rate must be greater than zero'};
+    if(!b) { s.rate=Number(newRate); return {ok:true,noBilling:true}; }
+    from=from||today; if(from<today) return {ok:false,error:'Effective date cannot be in the past'};
+    if(!b.rateHistory||!b.rateHistory.length) seedRate(s,(b.firstDue&&b.firstDue<today)?b.firstDue:today,'baseline-prior-rate',by);
+    var cur=rateFor(s,from,today);
+    if(cur.c===nc && b.rateHistory.every(function(x){ return x.from<=from; })) return {ok:true,unchanged:true};
+    b.rateHistory=b.rateHistory.filter(function(x){ return x.from!==from; });
+    b.rateHistory.push({from:from,rateC:nc,at:today,by:by||null,basis:'change'});
+    s.rate=fromC(rateFor(s,today,today).c); b.lastRateC=toC(s.rate);
+    return {ok:true,effectiveFrom:from};
+  }
+  function pendingRateChange(s,today){ var b=s.billing; if(!b) return null; var f=rateEntries(b).filter(function(x){ return x.from>today; }); return f.length?f[0]:null; }
+  // s.rate edited outside setRate: record it (effective today) instead of silently re-pricing history.
+  // b.lastRateC = the value this module last wrote to s.rate; anything else in s.rate is an operator edit.
+  function syncRate(s,today){
+    var b=s.billing; if(!b||!b.rateHistory||!b.rateHistory.length) return;
+    var eff=rateFor(s,today,today).c; if(b.lastRateC===undefined) b.lastRateC=eff;
+    if(toC(s.rate)!==b.lastRateC){ setRate(s,s.rate,today,today,'untracked-edit'); return; }
+    if(eff!==b.lastRateC){ s.rate=fromC(eff); b.lastRateC=eff; }
+  }
+  function resolveRateReview(s,itemId,amountC,by,today){
+    var b=s.billing, it=b&&find(b,itemId); if(!it||!it.rateReview) return {ok:false,error:'No rate review pending for this charge'};
+    if(!(amountC>0)) return {ok:false,error:'Amount must be greater than zero'}; if(paidC(it)>amountC) return {ok:false,error:'Amount is below what is already applied'};
+    it.rateConfirmed={at:today,by:by||null,placeholderC:it.rateReview.placeholderC,c:amountC}; it.amountC=amountC; delete it.rateReview; applyCredit(s,today); return {ok:true};
+  }
+  function rateReviews(s){ var b=s.billing; return b?b.obligations.filter(function(i){ return i.rateReview&&remC(i)>0; }):[]; }
+  function generate(s,today){
+    var b=s.billing, added=[]; if(!b||b.review||!b.firstDue||!b.billingDay||frozen(s)) return {added:added};
+    var limit=nextDueOnOrAfter(b.billingDay,today);
+    if(daysBetween(b.firstDue,limit)>MAX_BACKLOG_DAYS){ b.review=true; return {added:added,flagged:true}; }
+    var d=b.firstDue, g=0;
+    if(b.resumeFrom){ while(d<b.resumeFrom && g++<400) d=dueAfter(b.billingDay,d); g=0; }
+    while(d<=limit && g++<130){
+      var id='sub:'+d.slice(0,7);
+      if(!find(b,id)){ var rf=rateFor(s,d,today); var it={ id:id, kind:'subscription', dueDate:d, amountC:rf.c, applied:[], ext:null, notified:{} };
+        if(!rf.known) it.rateReview={reason:'No recorded rate for this service period',placeholderC:rf.c,flaggedAt:today};
+        b.obligations.push(it); added.push(it); }
+      d=dueAfter(b.billingDay,d);
+    }
+    return {added:added};
+  }
+  function order(a,b){ var ao=a.kind==='opening'?0:1, bo=b.kind==='opening'?0:1; if(ao!==bo) return ao-bo;
+    if(a.dueDate!==b.dueDate) return a.dueDate<b.dueDate?-1:1; var ak=a.kind==='subscription'?0:1, bk=b.kind==='subscription'?0:1; return ak-bk; }
+  function unpaidBilled(s,today){ var b=s.billing; return b.obligations.filter(function(it){ return billed(b,it,today)&&remC(it)>0&&!it.rateReview; }).sort(order); }
+  function applyAmount(s,amountC,src,today,at){
+    var out=[], left=amountC;
+    unpaidBilled(s,today).forEach(function(it){ if(left<=0) return; var c=Math.min(left,remC(it)); it.applied.push({src:src,c:c,at:at||today}); left-=c; out.push({itemId:it.id,kind:it.kind,c:c}); });
+    return {allocations:out,leftC:left};
+  }
+  function applyCredit(s,today){ var b=s.billing; if(!b||b.creditC<=0) return []; var r=applyAmount(s,b.creditC,'credit',today); b.creditC=r.leftC; return r.allocations; }
+  // Records a received payment. Cash -> oldest billed items first; excess -> credit (never discarded).
+  function recordPayment(s,amountC,paymentId,today){
+    if(!s.billing) return {ok:false,error:'Subscriber has no billing record'};
+    if(!(amountC>0)) return {ok:false,error:'Amount must be greater than zero'};
+    generate(s,today);
+    var r=applyAmount(s,amountC,'pay:'+paymentId,today);
+    s.billing.creditC+=r.leftC;
+    resolveExtensions(s,today);
+    return {ok:true,allocations:r.allocations,creditAddedC:r.leftC};
+  }
+  function subStatus(it,today){
+    if(remC(it)<=0) return 'paid';
+    var d=daysBetween(it.dueDate,today);
+    if(it.ext && !it.ext.resolution){ if(it.ext.until>=today) return 'extended'; if(d>=1) return 'overdue'; }
+    if(d<0) return 'current'; if(d===0) return 'due';
+    return d<1+OVERDUE_AFTER_DAYS ? 'pending' : 'overdue';
+  }
+  function controlling(s,today){ var b=s.billing; if(!b) return null; var l=unpaidBilled(s,today).filter(function(i){return i.kind==='subscription';}); return l.length?l[0]:null; }
+  function accountStatus(s,today){
+    if(s.status==='disconnected') return 'disconnected';
+    if(s.archived||s.permanentlyDeleted) return 'archived';
+    var b=s.billing; if(!b) return 'current';
+    if(b.review) return 'review';
+    var c=controlling(s,today); return c ? subStatus(c,today) : 'current';
+  }
+  function nextDue(s,today){
+    var b=s.billing; if(!b||!b.billingDay) return null; var c=controlling(s,today); if(c) return c.dueDate;
+    var subs=b.obligations.filter(function(i){return i.kind==='subscription';}).sort(order); if(!subs.length) return b.firstDue;
+    return dueAfter(b.billingDay,subs[subs.length-1].dueDate);
+  }
+  // HQ D6 definitions: billed outstanding = every GENERATED unpaid item (incl. verified opening, incl. not-yet-due);
+  // due now = due date <= today (+ verified opening); past due = due date < today; future scheduled = generated but not yet due.
+  function summary(s,today){
+    var b=s.billing; if(!b) return null;
+    var r={pendingRateC:0,subscriptionC:0,installationC:0,openingC:0,pastDueC:0,dueNowC:0,futureC:0,creditC:b.creditC||0,outstandingC:0};
+    b.obligations.forEach(function(it){ if(!billed(b,it,today)) return; var m=remC(it); if(m<=0) return;
+      if(it.rateReview){ r.pendingRateC+=m; return; } // HQ D3: unverified rate amounts are shown separately, never as confirmed receivables
+      if(it.kind==='subscription') r.subscriptionC+=m; else if(it.kind==='installation') r.installationC+=m; else r.openingC+=m;
+      if(!it.dueDate){ r.dueNowC+=m; } else { if(it.dueDate<today) r.pastDueC+=m; if(it.dueDate<=today) r.dueNowC+=m; else r.futureC+=m; } });
+    r.outstandingC=r.subscriptionC+r.installationC+r.openingC; r.netPayableC=Math.max(0,r.outstandingC-r.creditC); r.netDueNowC=Math.max(0,r.dueNowC-r.creditC);
+    return r;
+  }
+  // Receivables + cash split by ownership for the dashboard/Sheets (billing records only; review/unverified excluded and counted)
+  function receivables(data,today){
+    var out={ own:0, investor:0, unassigned:0, total:0, dueNow:0, pastDue:0, future:0, credit:0, unreviewed:0, pendingRate:0, byKind:{subscription:0,installation:0,opening:0} };
+    (data.subscribers||[]).forEach(function(s){ if(s.permanentlyDeleted||s.archived) return; if(!s.billing||s.billing.review){ if(s.billing&&s.billing.review) out.unreviewed++; return; }
+      var m=summary(s,today); if(!m) return; var k=(s.ownership==='own'||s.ownership==='investor')?s.ownership:'unassigned';
+      out[k]+=m.outstandingC; out.total+=m.outstandingC; out.dueNow+=m.dueNowC; out.pastDue+=m.pastDueC; out.future+=m.futureC; out.credit+=m.creditC; out.pendingRate+=m.pendingRateC;
+      out.byKind.subscription+=m.subscriptionC; out.byKind.installation+=m.installationC; out.byKind.opening+=m.openingC; });
+    return out;
+  }
+  // Cash collected split by what it was applied to (from payment allocations). Legacy payments w/o allocations = 'legacy'.
+  function collectionsByKind(data,period){
+    var r={subscription:0,installation:0,opening:0,credit:0,legacy:0};
+    (data.payments||[]).forEach(function(p){ if(period && !(p.date>=period.from&&p.date<=period.to)) return; var a=Math.round((Number(p.amount)||0)*100);
+      if(!p.allocations){ r.legacy+=a; return; } var used=0; p.allocations.forEach(function(x){ r[x.kind]=(r[x.kind]||0)+x.c; used+=x.c; }); r.credit+=Math.max(0,a-used); });
+    return r;
+  }
+  // charge breakdown for a due date (calendar + emails): subscription + installation components stay separate
+  function breakdownFor(s,it,today){
+    var b=s.billing, rows=[]; b.obligations.forEach(function(x){ if(x.dueDate===it.dueDate && remC(x)>0 && !x.rateReview) rows.push({kind:x.kind,id:x.id,amountC:x.amountC,remainingC:remC(x)}); });
+    return rows.sort(function(a,c){ return (a.kind==='subscription'?0:1)-(c.kind==='subscription'?0:1); });
+  }
+  function installmentSchedule(totalC,arrangement,connectionDate,billingDay,rateC){
+    var bd=billingDay||dayOf(connectionDate), d1=dueAfter(bd,connectionDate), rows=[];
+    if(arrangement==='full'){
+      rows.push({date:connectionDate,subscriptionC:0,installationC:totalC,totalC:totalC,label:'Installation fee due upon connection'});
+      rows.push({date:d1,subscriptionC:rateC,installationC:0,totalC:rateC,label:'First postpaid subscription'});
+    } else {
+      var parts=splitThree(totalC), d=d1;
+      for(var i=0;i<3;i++){ rows.push({date:d,subscriptionC:rateC,installationC:parts[i],totalC:rateC+parts[i],label:'Installment '+(i+1)+' of 3'}); d=dueAfter(bd,d); }
+      rows.push({date:d,subscriptionC:rateC,installationC:0,totalC:rateC,label:'Subscription only'});
+    }
+    return rows;
+  }
+  // New subscriber onboarding (postpaid): billing day = connection day; first subscription due one month later.
+  function onboardNew(s,o){ // o:{connectionDate, today, installation:{totalC,arrangement}|null}
+    var bd=dayOf(o.connectionDate), first=dueAfter(bd,o.connectionDate);
+    s.connectionDate=o.connectionDate; s.billing=newBilling({billingDay:bd,firstDue:first,openingState:'none'});
+    var b=s.billing;
+    if(o.installation && o.installation.totalC>0){
+      var t=o.installation.totalC, arr=o.installation.arrangement, ids=[];
+      if(arr==='full'){ b.obligations.push({id:'inst:full',kind:'installation',dueDate:o.connectionDate,amountC:t,applied:[],notified:{}}); ids.push('inst:full'); }
+      else { var p=splitThree(t), d=first; for(var i=0;i<3;i++){ b.obligations.push({id:'inst:'+(i+1),kind:'installation',dueDate:d,amountC:p[i],applied:[],notified:{}}); ids.push('inst:'+(i+1)); d=dueAfter(bd,d); } }
+      b.installation={ totalC:t, paymentArrangement:arr, createdAt:o.today, connectionDate:o.connectionDate, itemIds:ids };
+    }
+    seedRate(s,o.connectionDate<o.today?o.connectionDate:o.today,'onboarding');
+    generate(s,o.today); return s;
+  }
+  // Existing subscriber being registered now: no retroactive charges. Next due = next billing date.
+  function onboardExisting(s,o){ // o:{connectionDate, billingDay?, today, opening:{state,amountC}}
+    var bd=o.billingDay||dayOf(o.connectionDate), first=nextDueOnOrAfter(bd,o.today);
+    s.connectionDate=o.connectionDate||null;
+    s.billing=newBilling({billingDay:bd,firstDue:first,openingState:(o.opening&&o.opening.state)||'unverified'});
+    if(o.opening && o.opening.state==='verified-positive') setOpening(s,'verified-positive',o.opening.amountC,o.today);
+    seedRate(s,o.today,'onboarding-existing');
+    generate(s,o.today); return s;
+  }
+  // Legacy record (no s.billing). HQ D1: EVERY ambiguous legacy record needs operator verification of the billing
+  // baseline, however recent its `due` looks. Nothing is guessed, charged, notified or reset; legacy fields are preserved.
+  function migrateLegacy(s,today){
+    if(s.billing) return {action:'none'};
+    var mig={at:today,from:{due:s.due||null,status:s.status||null}};
+    if(s.status==='disconnected'||s.archived||s.permanentlyDeleted){ s.billing=newBilling({billingDay:dayOf(s.due),firstDue:null,migration:mig}); return {action:'inactive'}; }
+    s.billing=newBilling({billingDay:dayOf(s.due),review:true,migration:mig});
+    return {action:'review',reason:s.due?'billing baseline not verified (stored due date '+s.due+')':'no stored due date'};
+  }
+  // Suggested (NEVER auto-applied) baseline for the batch-review screen.
+  function reviewSuggestion(s,today){
+    var bd=(s.billing&&s.billing.billingDay)||dayOf(s.due)||null; if(!bd) return {billingDay:null,firstDue:null,note:'No due date on file'};
+    var next=nextDueOnOrAfter(bd,today), first=next, note='Suggested: next billing date (no back-charges)';
+    if(s.due && (s.status==='pending'||s.status==='overdue') && daysBetween(s.due,today)>=0 && daysBetween(s.due,today)<=92){ first=s.due; note='Legacy status '+s.status+': suggested first unpaid due '+s.due; }
+    return {billingDay:bd,firstDue:first,note:note};
+  }
+  // Operator confirms a quarantined record. firstDue defaults to the next billing date (no back-charges).
+  function resolveReview(s,o){ // o:{today, billingDay?, firstDue?, connectionDate?, opening:{state,amountC}}
+    var b=s.billing; if(!b||!b.review) return {ok:false,error:'Record is not awaiting review'};
+    var bd=o.billingDay||b.billingDay; if(!bd) return {ok:false,error:'Billing day required'};
+    var first=o.firstDue||nextDueOnOrAfter(bd,o.today);
+    if(daysBetween(first,o.today)>MAX_BACKLOG_DAYS) return {ok:false,error:'First billed due date is too far in the past'};
+    b.billingDay=bd; b.firstDue=first; b.review=false; if(o.connectionDate) s.connectionDate=o.connectionDate;
+    b.opening.state=(o.opening&&o.opening.state)||'unverified';
+    if(o.opening && o.opening.state==='verified-positive'){ var r=setOpening(s,'verified-positive',o.opening.amountC,o.today); if(!r.ok) return r; }
+    seedRate(s,first<o.today?first:o.today,'operator-review',o.by);
+    var g=generate(s,o.today);
+    if(o.suppressPast!==false){ (g.added||[]).forEach(function(it){ if(it.dueDate<o.today){ it.notified['pending:'+it.id]='review'; it.notified['overdue:'+it.id]='review'; } }); }
+    b.review=false; b.reviewedAt=o.today; b.reviewedBy=o.by||null; return {ok:true,generated:(g.added||[]).length};
+  }
+  function grantExtension(s,itemId,until,today,reason,by){
+    var b=s.billing, it=b&&find(b,itemId);
+    if(!it||it.kind!=='subscription'||remC(it)<=0) return {ok:false,error:'No unpaid subscription obligation to extend'};
+    if(!until||until<today) return {ok:false,error:'Extension deadline must be today or later'};
+    if(until<=it.dueDate) return {ok:false,error:'Extension deadline must be after the due date'};
+    if(it.ext && !it.ext.resolution) b.extensionLog.push(Object.assign({itemId:it.id,resolution:'replaced',resolvedAt:today},it.ext));
+    it.ext={grantedAt:today,until:until,reason:reason||'',by:by||null,originalDue:it.dueDate,resolution:null};
+    return {ok:true,item:it};
+  }
+  function resolveExtensions(s,today){
+    var b=s.billing; if(!b) return; b.obligations.forEach(function(it){
+      if(!it.ext||it.ext.resolution) return;
+      if(remC(it)<=0){ it.ext.resolution='paid'; it.ext.resolvedAt=today; b.extensionLog.push(Object.assign({itemId:it.id},it.ext)); }
+      else if(it.ext.until<today){ it.ext.resolution='expired'; it.ext.resolvedAt=today; b.extensionLog.push(Object.assign({itemId:it.id},it.ext)); } });
+  }
+  // Reconnect after a manual disconnect: unpaid pre-disconnect balances are preserved; NO charges are created for the
+  // disconnected period -- billing resumes from the next billing date.
+  function reconnect(s,today){
+    var b=s.billing; if(!b||!b.billingDay) return {ok:false,error:'No billing record'};
+    if(!b.firstDue){ b.review=true; return {ok:true,needsReview:true}; } // legacy disconnected record: baseline never verified
+    seedRate(s,today,'reconnect'); syncRate(s,today);
+    b.resumeFrom=nextDueOnOrAfter(b.billingDay,today); if(!b.firstDue||b.firstDue<b.resumeFrom){ b.firstDue=b.firstDue||b.resumeFrom; }
+    return {ok:true,resumeFrom:b.resumeFrom};
+  }
+  // Notification events for TODAY. Only the oldest unpaid subscription obligation controls escalation (no spam).
+  // Unpaid installation installments never escalate (not authorized yet) but are included in amounts.
+  // A marker is a claim written BEFORE sending (at-most-once). A FAILED send may be retried on a later day (max 3 attempts);
+  // 'claimed' (crash mid-send) and 'sent' are never re-sent.
+  var MAX_ATTEMPTS = 3, MAX_MANUAL_RETRIES = 3;
+  function open_(n,key,today){ var m=n[key]; if(!m) return true; if(typeof m==='string') return false; return m.status==='failed' && (m.attempts||1)<MAX_ATTEMPTS && m.at<today; }
+  function events(s,today){
+    var out=[]; if(!s.billing||s.billing.review||frozen(s)) return out;
+    var c=controlling(s,today); if(!c) return out; var st=subStatus(c,today), n=c.notified||{};
+    if(st==='pending'&&open_(n,'pending:'+c.id,today)) out.push({key:'pending:'+c.id,type:'pending',itemId:c.id});
+    if(st==='overdue'&&open_(n,'overdue:'+c.id,today)) out.push({key:'overdue:'+c.id,type:'overdue',itemId:c.id});
+    if(st==='extended'&&c.ext.until===addDays(today,1)){ var k='extReminder:'+c.id+':'+c.ext.until; if(open_(n,k,today)) out.push({key:k,type:'extReminder',itemId:c.id}); }
+    return out;
+  }
+  // 'claimed' = saved BEFORE the send attempt. If the run died before the result was recorded, the outcome is UNKNOWN
+  // (the mail may or may not have gone). Such markers are never re-sent automatically; an administrator decides.
+  function markStale(s,today){ var n=0; if(!s.billing) return 0; s.billing.obligations.forEach(function(it){ var nt=it.notified||{}; Object.keys(nt).forEach(function(k){ var m=nt[k]; if(m&&typeof m==='object'&&m.status==='claimed'&&m.at<today){ m.status='unknown'; m.staleAt=today; m.error='Run ended before the delivery result was recorded'; n++; } }); }); return n; }
+  function mark(s,ev,today){ var it=find(s.billing,ev.itemId); it.notified=it.notified||{}; var p=it.notified[ev.key]; var o=(p&&typeof p==='object')?p:null; var nm={status:'claimed',at:today,attempts:((o&&o.attempts)||0)+1}; if(o&&o.requeues) nm.requeues=o.requeues; it.notified[ev.key]=nm; }
+  function setDelivery(s,itemId,key,status,today,detail){ var it=find(s.billing,itemId); if(!it||!it.notified||!it.notified[key]||typeof it.notified[key]!=='object') return; var m=it.notified[key]; m.status=status; m.doneAt=today;
+    if(status==='failed'&&detail) m.error=String(detail).replace(/\s+/g,' ').slice(0,160); else if(status==='sent'){ delete m.error; m.smtpAccepted=true; } }
+  // Admin: put a failed / unconfirmed / no-email notice back in the queue for the next Cron run. Bounded (MAX_MANUAL_RETRIES).
+  // Never touches a 'sent' notice or one claimed today (a send may be in progress).
+  function requeueNotice(s,itemId,key,today,by){
+    var it=s.billing&&find(s.billing,itemId), m=it&&it.notified&&it.notified[key];
+    if(!m||typeof m!=='object') return {ok:false,error:'Notice not found'};
+    if(m.status==='sent') return {ok:false,error:'Already sent'}; if(m.status==='claimed'&&m.at>=today) return {ok:false,error:'A send may be in progress'};
+    if(['failed','unknown','claimed','skipped-no-email'].indexOf(m.status)<0) return {ok:false,error:'Not retryable'};
+    m.requeues=m.requeues||[]; if(m.requeues.length>=MAX_MANUAL_RETRIES) return {ok:false,error:'Manual retry limit reached'};
+    m.requeues.push({at:today,by:by||null,from:m.status}); m.status='failed'; m.attempts=Math.min(m.attempts||1,MAX_ATTEMPTS-1); m.at=addDays(today,-1); return {ok:true};
+  }
+  // Notices an administrator should look at (unpaid items only; a paid charge no longer needs its notice).
+  function noticeProblems(data,today){
+    var out=[]; (data.subscribers||[]).forEach(function(s){ if(s.permanentlyDeleted||!s.billing||s.billing.review) return;
+      s.billing.obligations.forEach(function(it){ if(remC(it)<=0) return; var nt=it.notified||{};
+        Object.keys(nt).forEach(function(k){ var m=nt[k]; if(!m||typeof m!=='object') return; var st=m.status, state=null;
+          if(st==='claimed'&&m.at<today) st='unknown';
+          if(st==='failed') state=((m.attempts||1)<MAX_ATTEMPTS)?'will-retry':'retries-exhausted';
+          else if(st==='unknown') state='unconfirmed'; else if(st==='skipped-no-email') state='no-email';
+          if(!state) return;
+          out.push({subId:s.id,name:s.name,email:s.email||'',itemId:it.id,key:k,type:k.split(':')[0],dueDate:it.dueDate,status:st,state:state,attempts:m.attempts||1,at:m.at,doneAt:m.doneAt||null,error:m.error||'',manualRetries:(m.requeues||[]).length,canRetry:(m.requeues||[]).length<MAX_MANUAL_RETRIES}); }); }); });
+    return out;
+  }
+  // Keeps legacy s.due/s.status in step so old screens (lists, CSV, Sheets) keep working.
+  function syncLegacyFields(s,today){
+    if(!s.billing||s.billing.review) return; var st=accountStatus(s,today); var nd=nextDue(s,today); if(nd) s.due=nd;
+    var cc=controlling(s,today); var ex=(cc&&cc.ext&&!cc.ext.resolution)?cc.ext:null;
+    s.extensionUntil=ex?ex.until:null; s.extensionGrantedAt=ex?ex.grantedAt:null; s.extensionReason=ex?ex.reason:''; s.extensionGrantedBy=ex?ex.by:null;
+    if(st==='disconnected'||st==='archived') return; s.status=(st==='current'||st==='due')?'paid':st;
+  }
+  // An upcoming (not yet due) subscription charge with no payment/notice yet follows the current rate;
+  // anything already due or touched keeps its frozen amount (older periods are never re-priced).
+  function repriceUpcoming(s,today){
+    var b=s.billing; if(!b) return; b.obligations.forEach(function(it){
+      if(it.kind==='subscription' && it.dueDate>today && !(it.applied&&it.applied.length) && !Object.keys(it.notified||{}).length && !it.ext && !it.rateReview){ var rf=rateFor(s,it.dueDate,today); if(rf.known) it.amountC=rf.c; } });
+  }
+  // Daily step (pure on state): generate, resolve, credit, derive. Idempotent.
+  function daily(s,today){
+    if(!s.billing) return {};
+    syncRate(s,today); markStale(s,today); repriceUpcoming(s,today); var g=generate(s,today); var cr=applyCredit(s,today); resolveExtensions(s,today); return {added:g.added,credit:cr};
+  }
+  return { OVERDUE_AFTER_DAYS:OVERDUE_AFTER_DAYS, STALE_DAYS:STALE_DAYS, toC:toC, fromC:fromC, splitThree:splitThree, daysBetween:daysBetween, addDays:addDays, dueAfter:dueAfter, nextDueOnOrAfter:nextDueOnOrAfter, dayOf:dayOf,
+    paidC:paidC, remC:remC, find:find, newBilling:newBilling, setOpening:setOpening, generate:generate, recordPayment:recordPayment, applyCredit:applyCredit,
+    subStatus:subStatus, accountStatus:accountStatus, controlling:controlling, nextDue:nextDue, summary:summary, breakdownFor:breakdownFor, installmentSchedule:installmentSchedule,
+    onboardNew:onboardNew, onboardExisting:onboardExisting, migrateLegacy:migrateLegacy, reconnect:reconnect, reviewSuggestion:reviewSuggestion, receivables:receivables, collectionsByKind:collectionsByKind, resolveReview:resolveReview, grantExtension:grantExtension, resolveExtensions:resolveExtensions,
+    events:events, mark:mark, setDelivery:setDelivery, markStale:markStale, requeueNotice:requeueNotice, noticeProblems:noticeProblems, MAX_ATTEMPTS:MAX_ATTEMPTS, MAX_MANUAL_RETRIES:MAX_MANUAL_RETRIES,
+    rateFor:rateFor, setRate:setRate, seedRate:seedRate, syncRate:syncRate, pendingRateChange:pendingRateChange, resolveRateReview:resolveRateReview, rateReviews:rateReviews, syncLegacyFields:syncLegacyFields, daily:daily, repriceUpcoming:repriceUpcoming, unpaidBilled:unpaidBilled };
+})();
+/* BILLING-END */
+
+function normalizeSubscriber(s){
+  if(s.ownership == null) s.ownership = 'unassigned'; // own | investor | unassigned
+  if(s.accountUsername == null) s.accountUsername = '';
+  if(s.napNumber == null) s.napNumber = '';
+  if(s.ponNumber == null) s.ponNumber = '';
+  if(s.connectionDate === undefined) s.connectionDate = null;
+  if(s.extensionGrantedAt === undefined) s.extensionGrantedAt = null;
+  if(s.extensionUntil === undefined) s.extensionUntil = null;
+  if(s.extensionReason === undefined) s.extensionReason = '';
+  if(s.extensionGrantedBy === undefined) s.extensionGrantedBy = null;
+  if(s.extensionHistory === undefined) s.extensionHistory = [];
+  if(s.lastWarningSentFor === undefined) s.lastWarningSentFor = null; // dedupes Disconnection Warning sends
+  if(s.extensionReminderSentFor === undefined) s.extensionReminderSentFor = null; // dedupes 1-day-before-extension reminder
+  if(s.lastPendingReminderSentFor === undefined) s.lastPendingReminderSentFor = null; // dedupes Pending reminder
+  if(s.permanentlyDeleted === undefined) s.permanentlyDeleted = false;
+  if(s.billing === undefined) s.billing = null;
+  return s;
+}
+function billingDayOf(s){
+  if(!s || !s.due) return null;
+  return new Date(s.due+'T00:00:00').getDate();
+}
+function normalizeAllData(){
+  (DATA.subscribers||[]).forEach(normalizeSubscriber);
+  /* HANDOFF #004 D1: legacy records (no billing ledger) are NEVER auto-migrated -- each is flagged "needs review", keeps its
+     stored due/status untouched, and receives no automated notices until the operator verifies the billing baseline. */
+  { const _t = todayLocal();
+    (DATA.subscribers||[]).forEach(s=>{ if(s.permanentlyDeleted) return;
+      if(!s.billing) BILL.migrateLegacy(s,_t); else { BILL.daily(s,_t); BILL.syncLegacyFields(s,_t); } }); }
+  if(DATA.business && DATA.business.installationFeeDefault == null) DATA.business.installationFeeDefault = 1500;
+  if(!DATA.business.paymentInfo) DATA.business.paymentInfo = { gcashQrUrl:'', gcashName:'', gcashNumber:'', instructions:'' };
+  if(!DATA.investorReport) DATA.investorReport = { email:'', enabled:false, sendOnDay:1, lastSentAt:null, lastSentPeriod:null };
+}
+
+async function loadData(){
+  if(!SUPABASE_READY){
+    DATA = defaultData();
+    return;
+  }
+  try{
+    const { data, error } = await sb.from('app_state').select('data, updated_at').eq('id', STATE_ROW_ID).single();
+    const remote = data && data.data;
+    const looksValid = remote && typeof remote === 'object' && remote.business && Array.isArray(remote.subscribers);
+    if(error || !looksValid){
+      // Don't try to write yet — an anonymous visitor (before login) isn't
+      // allowed to create this row. Just use in-memory defaults for now;
+      // establishSession() will seed it for real once someone's signed in.
+      DATA = defaultData();
+    } else {
+      DATA = remote;
+      setBase(remote, data.updated_at);
+    }
+  }catch(e){
+    console.error('Supabase load failed, using local defaults', e);
+    DATA = defaultData();
+  }
+  normalizeAllData();
+}
+/* ============ CONCURRENCY SAFETY (HANDOFF #003, Correction #003) ============
+   The whole business state is one JSON row, and BOTH this page and the daily
+   Cron job write it. Previously every save blindly overwrote the row from
+   whatever copy this page loaded at login, so a Cron status change (or a save
+   from another device) could be silently erased, and vice-versa.
+   Fix, with NO schema change: compare-and-swap on the existing `updated_at`
+   column. A save only succeeds if the row's updated_at is still the value we
+   last saw. If someone else wrote in between, we re-read their version and
+   three-way-merge (base = last version we saw, ours = our edits, theirs =
+   current server). Non-overlapping changes merge automatically. A true
+   same-field conflict is NEVER reported as success: the latest server data is
+   reloaded and the user is told to redo the change. */
+let BASE_DATA = null, BASE_VERSION = null;
+function cloneData(o){ return JSON.parse(JSON.stringify(o)); }
+function setBase(data, version){ BASE_DATA = cloneData(data); BASE_VERSION = version || null; }
+/* HANDOFF #008: the database rejects any staff write that adds/changes/removes Admin-only settings. Staff therefore send those
+   keys exactly as the server last returned them (even when the app filled in-memory defaults). Admins send everything. */
+const ADMIN_ONLY_KEYS = ['business','investorReport','plans','messageTemplate','announcementTemplate'];
+/* The only in-memory additions staff may carry (defaults filled by normalizeAllData). Anything else changed in an Admin-only
+   setting is a real edit that the server would refuse: report it instead of silently dropping it (no hidden failure). */
+const STAFF_DEFAULT_FILLS = { business:['installationFeeDefault','paymentInfo'], investorReport:null };
+function staffAdminOnlyEdit(d){
+  const base = BASE_DATA || {};
+  for(const k of ADMIN_ONLY_KEYS){
+    const b = base[k], c = d[k];
+    if(b === undefined){ // server has no value yet: only the known defaults may appear in memory
+      if(c !== undefined && !(k in STAFF_DEFAULT_FILLS) ) return k;
+      continue;
+    }
+    const allowedExtra = STAFF_DEFAULT_FILLS[k] || [];
+    if(c === undefined || typeof b !== 'object' || b === null || Array.isArray(b)){ if(!jeq(b,c)) return k; continue; }
+    const cc = cloneData(c); allowedExtra.forEach(x=>{ if(!(x in b)) delete cc[x]; });
+    if(!jeq(b,cc)) return k;
+  }
+  return null;
+}
+function payloadFor(d){
+  if(!SESSION || SESSION.role === 'admin') return d;
+  const out = cloneData(d), base = BASE_DATA || {};
+  ADMIN_ONLY_KEYS.forEach(k=>{ if(base[k] === undefined) delete out[k]; else out[k] = cloneData(base[k]); });
+  return out;
+}
+function jeq(a,b){ return JSON.stringify(a) === JSON.stringify(b); }
+function allHaveId(arrs){ return arrs.every(a => a.every(x => x && typeof x==='object' && typeof x.id==='string')); }
+function merge3(base, ours, theirs, path){
+  if(jeq(ours,theirs)) return { ok:true, value:ours };
+  if(jeq(ours,base)) return { ok:true, value:theirs };
+  if(jeq(theirs,base)) return { ok:true, value:ours };
+  const isObj = v => v && typeof v==='object' && !Array.isArray(v);
+  if(isObj(ours) && isObj(theirs)){
+    const b = isObj(base) ? base : {};
+    const out = {};
+    const keys = new Set([...Object.keys(b), ...Object.keys(ours), ...Object.keys(theirs)]);
+    for(const k of keys){
+      const r = merge3(b[k], ours[k], theirs[k], path+'.'+k);
+      if(!r.ok) return r;
+      if(r.value !== undefined) out[k] = r.value;
+    }
+    return { ok:true, value:out };
+  }
+  if(Array.isArray(ours) && Array.isArray(theirs)){
+    const b = Array.isArray(base) ? base : [];
+    if(allHaveId([b,ours,theirs])){
+      const by = arr => { const m = new Map(); arr.forEach(x=>m.set(x.id,x)); return m; };
+      const bm=by(b), om=by(ours), tm=by(theirs);
+      const order = [...theirs.map(x=>x.id), ...ours.map(x=>x.id).filter(id=>!tm.has(id))];
+      const out = [];
+      for(const id of order){
+        const bo=bm.get(id), oo=om.get(id), to=tm.get(id);
+        if(oo===undefined && bo!==undefined){ if(jeq(to,bo)) continue; return { ok:false, path:path+'['+id+'] (deleted here, changed elsewhere)' }; }
+        if(to===undefined && bo!==undefined){ if(jeq(oo,bo)) continue; return { ok:false, path:path+'['+id+'] (deleted elsewhere, changed here)' }; }
+        if(bo===undefined){ if(oo!==undefined && to!==undefined && !jeq(oo,to)) return { ok:false, path:path+'['+id+'] (same id added twice)' }; out.push(oo!==undefined?oo:to); continue; }
+        const r = merge3(bo,oo,to,path+'['+id+']');
+        if(!r.ok) return r;
+        out.push(r.value);
+      }
+      return { ok:true, value:out };
+    }
+    // id-less lists (audit log, plans, history entries): treat as sets
+    const bk = new Set(b.map(x=>JSON.stringify(x)));
+    const tk = new Set(theirs.map(x=>JSON.stringify(x)));
+    const ok_ = new Set(ours.map(x=>JSON.stringify(x)));
+    const added = ours.filter(x => !bk.has(JSON.stringify(x)) && !tk.has(JSON.stringify(x)));
+    const keptTheirs = theirs.filter(x => !(bk.has(JSON.stringify(x)) && !ok_.has(JSON.stringify(x))));
+    return { ok:true, value:[...added, ...keptTheirs] };
+  }
+  return { ok:false, path };
+}
+async function discardUnsavedChanges(){
+  // So the UI never keeps showing a change (e.g. "Paid") that was not actually persisted.
+  try{
+    const { data: row } = await sb.from('app_state').select('data, updated_at').eq('id', STATE_ROW_ID).single();
+    if(row && row.data){ reloadFromRemote(row); if(SESSION) navigate(CURRENT_PAGE); }
+  }catch(e){ console.warn('Could not refresh after failed save', e); }
+}
+function reloadFromRemote(row){
+  DATA = cloneData(row.data); setBase(row.data, row.updated_at); normalizeAllData(); // base = exactly what the server holds (before in-memory defaults)
+}
+async function saveData(){
+  if(!SUPABASE_READY){
+    console.warn('Supabase is not configured — changes will not be saved permanently.');
+    return false;
+  }
+  try{
+    for(let attempt=0; attempt<4; attempt++){
+      const newVersion = new Date().toISOString();
+      if(SESSION && SESSION.role !== 'admin'){
+        const bad = staffAdminOnlyEdit(DATA);
+        if(bad){
+          alert('Your change was NOT saved: "' + bad + '" is an Admin-only setting. The screen has been refreshed to the last saved data.');
+          await discardUnsavedChanges();
+          return false;
+        }
+      }
+      const PAYLOAD = payloadFor(DATA);
+      let res;
+      if(BASE_VERSION){
+        res = await sb.from('app_state').update({ data: PAYLOAD, updated_at: newVersion }).eq('id', STATE_ROW_ID).eq('updated_at', BASE_VERSION).select('updated_at');
+      } else {
+        res = await sb.from('app_state').upsert({ id: STATE_ROW_ID, data: PAYLOAD, updated_at: newVersion }).select('updated_at');
+      }
+      if(res.error){
+        console.error('Supabase save failed', res.error);
+        alert('Your change could NOT be saved (' + (res.error.message || 'unknown error') + '). The screen has been refreshed to the last saved data — please try again.');
+        await discardUnsavedChanges();
+        return false;
+      }
+      if(res.data && res.data.length){
+        setBase(PAYLOAD, res.data[0].updated_at);
+        syncToGoogleSheets();
+        return true;
+      }
+      // Zero rows updated: someone else saved since we last looked.
+      const { data: row, error: rerr } = await sb.from('app_state').select('data, updated_at').eq('id', STATE_ROW_ID).single();
+      if(rerr || !row || !row.data){
+        alert('Your change could NOT be saved: the latest data could not be loaded. Please reload the page.');
+        return false;
+      }
+      const m = merge3(BASE_DATA || {}, DATA, cloneData(row.data), 'data'); // clone: normalizeAllData must never mutate the server copy used as the next base
+      if(!m.ok){
+        reloadFromRemote(row);
+        alert('Your change was NOT saved: the same record was changed at the same time by someone or something else (' + m.path + '). The latest data has been reloaded — please redo your change.');
+        if(SESSION) navigate(CURRENT_PAGE);
+        return false;
+      }
+      DATA = m.value; normalizeAllData();
+      BASE_DATA = cloneData(row.data); BASE_VERSION = row.updated_at; // retry the swap against the newer version
+    }
+    alert('Your change could NOT be saved after several attempts because the data keeps changing. Please reload and try again.');
+    return false;
+  }catch(e){
+    console.error('Supabase save failed', e);
+    alert('Your change could NOT be saved (network or server error). The screen has been refreshed to the last saved data — please try again.');
+    await discardUnsavedChanges();
+    return false;
+  }
+}
+
+/* ============ GOOGLE SHEETS BACKUP ============ */
+let lastSheetsSyncStatus = null; // { ok: bool, at: Date, error?: string }
+function syncToGoogleSheets(){
+  if(!SESSION || !SESSION.accessToken) return Promise.resolve(); // only sync when someone's actually signed in
+  return fetch('/api/sync-sheets', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ accessToken: SESSION.accessToken, data: DATA })
+  }).then(async (res) => {
+    if(!res.ok){
+      const body = await res.json().catch(() => ({}));
+      lastSheetsSyncStatus = { ok:false, at:new Date(), error: body.error || body.detail || 'Unknown error' };
+      console.warn('Google Sheets backup sync failed (app data is still saved normally):', res.status, body.error || body.detail || 'Unknown error');
+    } else {
+      lastSheetsSyncStatus = { ok:true, at:new Date() };
+    }
+  }).catch((e) => {
+    lastSheetsSyncStatus = { ok:false, at:new Date(), error:String(e) };
+    console.warn('Google Sheets backup sync failed (app data is still saved normally):', e);
+  });
+}
+async function manualSyncSheets(){
+  const btn = document.getElementById('manual-sync-btn');
+  if(btn){ btn.disabled = true; btn.textContent = 'Syncing…'; }
+  await syncToGoogleSheets();
+  if(CURRENT_PAGE === 'settings') navigate('settings');
+}
+
+/* ============ SESSION ============ */
+let SESSION = null; // { username, role, name, userId, accessToken, sessionId }
+let idleTimer = null;
+let sessionCheckInterval = null;
+const IDLE_TIMEOUT_MS = 20 * 60 * 1000; // 20 minutes
+const SESSION_CHECK_MS = 30 * 1000; // 30 seconds
+
+function can(action){
+  // action: 'edit_business','edit_subscriber','add_subscriber','edit_expense','manage_accounts','edit_settings'
+  if(!SESSION) return false;
+  if(SESSION.role === 'admin') return true;
+  if(SESSION.role === 'user'){
+    return ['add_subscriber','edit_subscriber','edit_expense','record_payment'].includes(action);
+  }
+  return false; // guest: view only
+}
+
+function logAudit(text){
+  if(!DATA.auditLog) DATA.auditLog = [];
+  DATA.auditLog.unshift({ text, by: SESSION ? SESSION.name : 'System', at: new Date().toISOString() });
+  if(DATA.auditLog.length > 200) DATA.auditLog.length = 200;
+}
+
+function resetIdleTimer(){
+  if(idleTimer) clearTimeout(idleTimer);
+  if(!SESSION) return;
+  idleTimer = setTimeout(()=>{
+    handleLogout('You were signed out after 20 minutes of inactivity.');
+  }, IDLE_TIMEOUT_MS);
+}
+['mousemove','keydown','click','touchstart','scroll'].forEach(evt=>{
+  document.addEventListener(evt, ()=>{ if(SESSION) resetIdleTimer(); }, { passive:true });
+});
+
+async function startSingleSessionEnforcement(){
+  if(SESSION.role !== 'admin' || !SUPABASE_READY) return;
+  const newSessionId = crypto.randomUUID();
+  SESSION.sessionId = newSessionId;
+  await sb.from('active_sessions').upsert({ user_id: SESSION.userId, session_id: newSessionId, updated_at: new Date().toISOString() });
+  if(sessionCheckInterval) clearInterval(sessionCheckInterval);
+  sessionCheckInterval = setInterval(async ()=>{
+    if(!SESSION) return;
+    const { data, error } = await sb.from('active_sessions').select('session_id').eq('user_id', SESSION.userId).single();
+    if(!error && data && data.session_id !== SESSION.sessionId){
+      handleLogout('You were signed out because this admin account was signed in on another device.');
+    }
+  }, SESSION_CHECK_MS);
+}
+function stopSingleSessionEnforcement(){
+  if(sessionCheckInterval) clearInterval(sessionCheckInterval);
+  sessionCheckInterval = null;
+}
+
+async function runAutoArchiveChecks(){
+  if(!can('add_subscriber') && SESSION.role !== 'admin') return; // only admin/user can write
+  const now = Date.now();
+  const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+  const NINETY_DAYS = 90 * 24 * 60 * 60 * 1000; // ~3 months
+  let changed = false;
+  (DATA.subscribers||[]).forEach(s=>{
+    if(s.status === 'disconnected' && s.disconnectedAt && !s.archived){
+      const age = now - new Date(s.disconnectedAt+'T00:00:00').getTime();
+      if(age >= THIRTY_DAYS){ s.archived = true; changed = true; }
+    }
+  });
+  (DATA.payments||[]).forEach(p=>{
+    if(p.date && !p.archived){
+      const age = now - new Date(p.date+'T00:00:00').getTime();
+      if(age >= NINETY_DAYS){ p.archived = true; changed = true; }
+    }
+  });
+  if(changed) await saveData();
+}
+
+/* ============ LOGIN ============ */
+function renderLoginBrand(){
+  if(!DATA || !DATA.business){
+    DATA = DATA || {};
+    DATA.business = DATA.business || { name: 'SignalDesk', logo: '' };
+  }
+  document.getElementById('login-title').textContent = DATA.business.name;
+  const logoEl = document.getElementById('login-logo');
+  if(DATA.business.logo){
+    logoEl.innerHTML = '<img src="'+DATA.business.logo+'" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">';
+  } else {
+    logoEl.textContent = DATA.business.name.slice(0,2).toUpperCase();
+  }
+  document.getElementById('demo-accounts').innerHTML =
+    'Forgot your password or need an account? Ask your admin.';
+  if(!SUPABASE_READY){
+    const warn = document.createElement('div');
+    warn.style.cssText = 'margin-top:14px;padding:10px 12px;background:#fdf3e0;border:1px solid #f0d9a6;border-radius:8px;font-size:11.5px;color:#7a5a00;text-align:left;line-height:1.5;';
+    warn.innerHTML = '<strong>Setup needed:</strong> Supabase isn\'t connected yet, so nothing you do here will be saved. Open index.html and replace SUPABASE_URL / SUPABASE_ANON_KEY near the top of the script with your real project values, then redeploy.';
+    document.querySelector('.login-card').appendChild(warn);
+  }
+  const submitBtn = document.getElementById('login-submit-btn');
+  submitBtn.disabled = false;
+  submitBtn.textContent = 'Sign in';
+  if(SUPABASE_READY && sb.auth.passkey){
+    document.getElementById('login-passkey-btn').style.display = 'block';
+  }
+  const enterHandler = (e)=>{ if(e.key === 'Enter'){ e.preventDefault(); handleLogin(); } };
+  document.getElementById('login-username').addEventListener('keydown', enterHandler);
+  document.getElementById('login-password').addEventListener('keydown', enterHandler);
+}
+
+async function handleLogin(){
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  if(!SUPABASE_READY){
+    errEl.textContent = 'Supabase is not configured — sign-in is unavailable.';
+    return;
+  }
+  const email = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  if(!email || !password){
+    errEl.textContent = 'Enter your email and password.';
+    return;
+  }
+  const submitBtn = document.getElementById('login-submit-btn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Signing in…';
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  submitBtn.disabled = false;
+  submitBtn.textContent = 'Sign in';
+  if(error){
+    errEl.textContent = 'Incorrect email or password.';
+    return;
+  }
+  await establishSession(data.session);
+}
+
+async function handleLoginWithPasskey(){
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  if(!SUPABASE_READY || !sb.auth.passkey){
+    errEl.textContent = 'Passkey sign-in is not available.';
+    return;
+  }
+  try{
+    // Beta Supabase API — method name may change; check current docs if this errors.
+    const { data, error } = await sb.auth.passkey.authenticate ? await sb.auth.passkey.authenticate() : await sb.auth.signInWithPasskey();
+    if(error || !data){ errEl.textContent = 'Passkey sign-in failed or was cancelled.'; return; }
+    await establishSession(data.session);
+  }catch(e){
+    errEl.textContent = 'Passkey sign-in is not available on this device/browser.';
+    console.warn('Passkey sign-in error', e);
+  }
+}
+
+async function registerPasskey(){
+  const msgEl = document.getElementById('passkey-msg');
+  if(!msgEl) return;
+  msgEl.style.color = 'var(--text-2)';
+  msgEl.textContent = 'Follow the prompt from your browser/device…';
+  if(!SUPABASE_READY || !sb.auth.passkey){
+    msgEl.style.color = 'var(--red)';
+    msgEl.textContent = 'Passkeys are not enabled for this project yet. Enable them in Supabase under Authentication > Passkeys first.';
+    return;
+  }
+  try{
+    // Beta Supabase API — method name may change; check current docs if this errors.
+    const { data, error } = await sb.auth.passkey.register ? await sb.auth.passkey.register() : await sb.auth.enrollPasskey();
+    if(error){
+      msgEl.style.color = 'var(--red)';
+      msgEl.textContent = 'Could not register a passkey: ' + (error.message || 'unknown error');
+      return;
+    }
+    msgEl.style.color = 'var(--green)';
+    msgEl.textContent = 'Passkey registered — you can now sign in with it on this device.';
+    logAudit('Registered a passkey');
+    await saveData();
+  }catch(e){
+    msgEl.style.color = 'var(--red)';
+    msgEl.textContent = 'Passkey registration is not available on this device/browser.';
+    console.warn('Passkey registration error', e);
+  }
+}
+
+async function establishSession(session){
+  const errEl = document.getElementById('login-error');
+  const { data: profile, error } = await sb.from('profiles').select('name, role').eq('id', session.user.id).single();
+  if(error || !profile){
+    errEl.textContent = 'Your account has no profile set up yet. Ask your admin to add one.';
+    await sb.auth.signOut();
+    return;
+  }
+  SESSION = {
+    username: session.user.email,
+    role: profile.role,
+    name: profile.name,
+    userId: session.user.id,
+    accessToken: session.access_token
+  };
+  // Now that we're actually authenticated, re-check the real data. If the
+  // table is still genuinely empty/invalid, seed it for real — this write
+  // only succeeds now because we're signed in with an admin/user role.
+  const { data: existing } = await sb.from('app_state').select('data, updated_at').eq('id', STATE_ROW_ID).single();
+  const remote = existing && existing.data;
+  const looksValid = remote && typeof remote === 'object' && remote.business && Array.isArray(remote.subscribers);
+  if(looksValid){
+    DATA = remote;
+    setBase(remote, existing.updated_at);
+  } else if(SESSION.role === 'admin'){
+    DATA = defaultData();
+    BASE_DATA = {}; BASE_VERSION = (existing && existing.updated_at) || null; // existing-but-empty row -> CAS update; no row -> insert
+    await saveData();
+  }
+  normalizeAllData();
+  applyAccentColor();
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').classList.add('show');
+  document.getElementById('app').style.display = 'grid';
+  renderShell();
+  navigate('overview');
+  resetIdleTimer();
+  await startSingleSessionEnforcement();
+  await runAutoArchiveChecks();
+}
+
+async function handleLogout(message){
+  if(SUPABASE_READY){
+    await sb.auth.signOut();
+  }
+  stopSingleSessionEnforcement();
+  if(idleTimer) clearTimeout(idleTimer);
+  SESSION = null;
+  document.getElementById('app').classList.remove('show');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-username').value = '';
+  document.getElementById('login-password').value = '';
+  const errEl = document.getElementById('login-error');
+  if(errEl) errEl.textContent = message || '';
+}
+
+function applyAccentColor(){
+  const color = (DATA && DATA.business && DATA.business.accentColor) || '#2a6dd9';
+  document.documentElement.style.setProperty('--accent', color);
+  document.documentElement.style.setProperty('--accent-dark', shadeColor(color, -18));
+  document.documentElement.style.setProperty('--accent-bg', shadeColor(color, 85));
+}
+function shadeColor(hex, percent){
+  hex = hex.replace('#','');
+  if(hex.length === 3) hex = hex.split('').map(c=>c+c).join('');
+  const num = parseInt(hex, 16);
+  let r = (num >> 16), g = (num >> 8 & 0x00FF), b = (num & 0x0000FF);
+  const amt = Math.round(2.55 * percent);
+  r = Math.min(255, Math.max(0, r + amt));
+  g = Math.min(255, Math.max(0, g + amt));
+  b = Math.min(255, Math.max(0, b + amt));
+  return '#' + (0x1000000 + r*0x10000 + g*0x100 + b).toString(16).slice(1);
+}
+
+/* ============ SHELL / NAV ============ */
+const NAV_ITEMS = [
+  { id:'overview', label:'Overview', icon:'ti-layout-dashboard' },
+  { id:'subscribers', label:'Subscribers', icon:'ti-users' },
+  { id:'payments', label:'Payments', icon:'ti-credit-card' },
+  { id:'reminders', label:'Reminders', icon:'ti-bell' },
+  { id:'broadcast', label:'Broadcast', icon:'ti-speakerphone' },
+  { id:'calendar', label:'Calendar', icon:'ti-calendar' },
+  { id:'expenses', label:'Expenses', icon:'ti-receipt-2' },
+  { id:'transactions', label:'Transactions', icon:'ti-list-details' },
+  { id:'settings', label:'Settings', icon:'ti-settings' }
+];
+let CURRENT_PAGE = 'overview';
+
+function renderShell(){
+  const sidebarEl = document.getElementById('sidebar');
+  const logoHtml = DATA.business.logo
+    ? '<img src="'+DATA.business.logo+'">'
+    : DATA.business.name.slice(0,2).toUpperCase();
+  sidebarEl.innerHTML = `
+    <div class="brand-row">
+      <div class="brand-logo">${logoHtml}</div>
+      <div class="brand-name">${escapeHtml(DATA.business.name)}</div>
+    </div>
+    <div id="nav-list"></div>
+    <div class="nav-spacer"></div>
+    <div class="role-box">
+      <div class="role-user">
+        <div class="role-avatar">${SESSION.name.slice(0,2).toUpperCase()}</div>
+        <div class="role-meta">
+          <div class="rn">${escapeHtml(SESSION.name)}</div>
+          <div class="rr">${SESSION.role}</div>
+        </div>
+      </div>
+      <button class="btn logout-btn" onclick="handleLogout()"><i class="ti ti-logout" aria-hidden="true"></i> Log out</button>
+    </div>
+  `;
+  const navList = document.getElementById('nav-list');
+  navList.innerHTML = NAV_ITEMS.map(n =>
+    `<div class="nav-item" data-nav="${n.id}"><i class="ti ${n.icon}" aria-hidden="true"></i>${n.label}</div>`
+  ).join('');
+  navList.querySelectorAll('.nav-item').forEach(el=>{
+    el.addEventListener('click', ()=> navigate(el.dataset.nav));
+  });
+  document.getElementById('mobile-brand-name').textContent = DATA.business.name;
+}
+
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('show');
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('show');
+}
+
+function navigate(page){
+  CURRENT_PAGE = page;
+  document.querySelectorAll('.nav-item').forEach(el=>{
+    el.classList.toggle('active', el.dataset.nav === page);
+  });
+  closeSidebar();
+  const renderers = {
+    overview: renderOverview,
+    subscribers: renderSubscribers,
+    payments: renderPayments,
+    reminders: renderReminders,
+    broadcast: renderBroadcast,
+    calendar: renderCalendar,
+    expenses: renderExpenses,
+    transactions: renderTransactions,
+    settings: renderSettings
+  };
+  document.getElementById('main').innerHTML = '<div class="page show" id="page-root"></div>';
+  renderers[page]();
+}
+
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function peso(n){ return '\u20b1' + Number(n||0).toLocaleString('en-PH',{maximumFractionDigits:0}); }
+
+/* ============ OWN / INVESTOR / OVERALL \u2014 AUTHORITATIVE CALCULATION
+   (HANDOFF #002 Sections 7/8/9). This is the SINGLE source of truth used
+   by the Dashboard, the Google Sheets Investor Report, and the monthly
+   Investor email -- all three must reconcile, so all three call this.
+   Payments/expenses recorded before ownership/allocation existed have no
+   `ownership`/`allocation` field; they're intentionally excluded from the
+   Own/Investor split (never retroactively guessed) and counted only in
+   Overall, consistent with "no silent historical financial recomputation". */
+/* TOTALS-BEGIN (single source of truth; copied verbatim into index.html, api/daily-status-check.js and api/sync-sheets.js — tests assert the three copies are identical) */
+function computeOwnershipTotals(data, period){
+  // period: null = all-time, or { from:'YYYY-MM-DD', to:'YYYY-MM-DD' } inclusive.
+  data = data || {};
+  var inP = function(d){ if(!period) return true; return !!d && d >= period.from && d <= period.to; };
+  var subs = (data.subscribers||[]).filter(function(s){ return !s.permanentlyDeleted; });
+  var active = subs.filter(function(s){ return !s.archived; });
+  var counts = { own:0, investor:0, unassigned:0, overall:active.length };
+  active.forEach(function(s){ counts[(s.ownership==='own'||s.ownership==='investor') ? s.ownership : 'unassigned']++; });
+  var revenue = { own:0, investor:0, unassigned:0, overall:0 };
+  var expenses = { own:0, investor:0, unclassified:0, overall:0 };
+  (data.payments||[]).forEach(function(p){
+    if(!inP(p.date)) return;
+    var a = Number(p.amount)||0;
+    revenue.overall += a;
+    if(p.ownership==='own') revenue.own += a;
+    else if(p.ownership==='investor') revenue.investor += a;
+    else revenue.unassigned += a; // legacy (no snapshot) or explicitly unassigned -- never guessed
+  });
+  (data.expenses||[]).filter(function(e){ return !e.voided; }).forEach(function(e){
+    if(!inP(e.date)) return;
+    var a = Number(e.amount)||0;
+    expenses.overall += a;
+    if(e.allocation){ expenses.own += Number(e.allocation.own)||0; expenses.investor += Number(e.allocation.investor)||0; }
+    else expenses.unclassified += a; // legacy expense with no allocation snapshot
+  });
+  return {
+    period: period || null,
+    counts: counts, revenue: revenue, expenses: expenses,
+    net: { own: revenue.own-expenses.own, investor: revenue.investor-expenses.investor, overall: revenue.overall-expenses.overall }
+  };
+}
+function monthPeriod(key){ // 'YYYY-MM' -> inclusive period
+  var y = Number(key.slice(0,4)), m = Number(key.slice(5,7));
+  var last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  return { key: key, from: key+'-01', to: key+'-'+(last<10 ? '0'+last : ''+last) };
+}
+function prevMonthPeriod(todayStr){ // todayStr = Manila calendar date 'YYYY-MM-DD' -> previous completed month
+  var y = Number(todayStr.slice(0,4)), m = Number(todayStr.slice(5,7));
+  var py = (m===1) ? y-1 : y, pm = (m===1) ? 12 : m-1;
+  return monthPeriod(py+'-'+(pm<10 ? '0'+pm : ''+pm));
+}
+function activityMonthKeys(data){
+  var seen = {};
+  (data.payments||[]).forEach(function(p){ if(p.date) seen[p.date.slice(0,7)] = 1; });
+  (data.expenses||[]).filter(function(e){ return !e.voided; }).forEach(function(e){ if(e.date) seen[e.date.slice(0,7)] = 1; });
+  return Object.keys(seen).sort();
+}
+/* TOTALS-END */
+function reviewPending(s){ return !!(s && s.billing && s.billing.review && !s.archived && !s.permanentlyDeleted && s.status!=='disconnected'); }
+function statusTagFor(s){ if(reviewPending(s)) return '<span class="tag tag-amber" title="Billing baseline not verified yet — no automatic notices are sent">Needs review</span>'; return statusTag(s.status); }
+function subDueCell(s){
+  if(reviewPending(s)) return `<span style="color:var(--text-3);">${s.due||'-'}</span><div style="font-size:11px;color:var(--amber);">unverified</div>`;
+  const m = s.billing ? BILL.summary(s, todayLocal()) : null;
+  return `${s.due||'-'}${m && m.outstandingC>0 ? `<div style="font-size:11px;color:var(--text-3);">owes ${peso(BILL.fromC(m.outstandingC))}${m.pastDueC>0?` · ${peso(BILL.fromC(m.pastDueC))} past due`:''}</div>`:''}${m && m.creditC>0 ? `<div style="font-size:11px;color:var(--green);">credit ${peso(BILL.fromC(m.creditC))}</div>`:''}`;
+}
+function canExtend(s){
+  if(!s.billing || s.billing.review || s.archived || s.status==='disconnected') return false;
+  const st = BILL.accountStatus(s, todayLocal()); return st==='pending'||st==='overdue'||st==='due';
+}
+function statusTag(status){
+  const map = { paid:['tag-green','Paid'], pending:['tag-amber','Pending'], overdue:['tag-red','Overdue'], disconnected:['tag-gray','Disconnected'], extended:['tag-blue','Extended'] };
+  const [cls,label] = map[status] || ['tag-gray', status];
+  return `<span class="tag ${cls}">${label}</span>`;
+}
+
+/* ============ OVERVIEW ============ */
+let overviewPeriod = 'monthly';
+function renderOverview(){
+  const root = document.getElementById('page-root');
+  const totalCollected = DATA.payments.reduce((s,p)=>s+p.amount,0);
+  const totalExpenses = liveExpenses().reduce((s,e)=>s+e.amount,0);
+  const net = totalCollected - totalExpenses;
+  const statusCounts = { paid:0, pending:0, overdue:0, disconnected:0 };
+  DATA.subscribers.filter(s=>!s.archived && !s.permanentlyDeleted).forEach(s => statusCounts[s.status] = (statusCounts[s.status]||0)+1);
+
+  root.innerHTML = `
+    <div class="page-head">
+      <div><h2 class="page-title">Overview</h2><p class="page-sub">Collections and service health at a glance</p></div>
+      <div class="period-toggle" id="ov-period">
+        <button data-p="monthly" class="${overviewPeriod==='monthly'?'active':''}">Monthly</button>
+        <button data-p="yearly" class="${overviewPeriod==='yearly'?'active':''}">Yearly</button>
+      </div>
+    </div>
+    <div class="grid-4" style="margin-bottom:16px;">
+      <div class="card"><div class="metric-label">Collected</div><div class="metric-val">${peso(totalCollected)}</div><div class="metric-sub">${DATA.payments.length} payments confirmed</div></div>
+      <div class="card"><div class="metric-label">Expenses</div><div class="metric-val">${peso(totalExpenses)}</div><div class="metric-sub">${liveExpenses().length} entries logged</div></div>
+      <div class="card"><div class="metric-label">Net</div><div class="metric-val" style="color:${net>=0?'var(--green)':'var(--red)'}">${peso(net)}</div><div class="metric-sub">${net>=0?'Above':'Below'} operating cost</div></div>
+      <div class="card"><div class="metric-label">Active subscribers</div><div class="metric-val">${DATA.subscribers.filter(s=>!s.archived && !s.permanentlyDeleted && s.status!=='disconnected').length}</div><div class="metric-sub">${statusCounts.overdue||0} overdue</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="metric-label" style="margin-bottom:10px;">Collections trend</div>
+        <div style="position:relative;height:220px;"><canvas id="collectionsChart" role="img" aria-label="Bar chart of collections over time"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="metric-label" style="margin-bottom:10px;">Subscriber status mix</div>
+        <div style="position:relative;height:220px;"><canvas id="statusChart" role="img" aria-label="Pie chart of subscriber status"></canvas></div>
+      </div>
+    </div>
+    ${renderOwnershipDashboard()}
+  `;
+  document.getElementById('ov-period').querySelectorAll('button').forEach(b=>{
+    b.addEventListener('click', ()=>{ overviewPeriod = b.dataset.p; renderOverview(); });
+  });
+  drawOverviewCharts();
+}
+
+let ownershipPeriodKey = 'all'; // 'all' (All-Time) or 'YYYY-MM'
+function setOwnershipPeriod(v){ ownershipPeriodKey = v; renderOverview(); }
+function renderOwnershipDashboard(){
+  const period = ownershipPeriodKey === 'all' ? null : monthPeriod(ownershipPeriodKey);
+  const t = computeOwnershipTotals(DATA, period);
+  const keys = activityMonthKeys(DATA);
+  const curKey = todayLocal().slice(0,7);
+  if(keys.indexOf(curKey) === -1) keys.push(curKey);
+  keys.sort().reverse();
+  const periodLabel = period ? ('Month of ' + period.key + ' (' + period.from + ' to ' + period.to + ')') : 'All-Time (cumulative)';
+  const col = (key, label, tagCls) => `
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div class="metric-label" style="margin:0;">${label}</div>
+        <span class="tag ${tagCls}">${t.counts[key]} subs</span>
+      </div>
+      <div class="metric-val">${peso(t.net[key])}</div>
+      <div class="metric-sub">net</div>
+      <div style="margin-top:10px;font-size:12px;color:var(--text-2);display:flex;justify-content:space-between;"><span>Revenue</span><span>${peso(t.revenue[key])}</span></div>
+      <div style="font-size:12px;color:var(--text-2);display:flex;justify-content:space-between;"><span>${key==='overall'?'Expenses':'Allocated expenses'}</span><span>${peso(t.expenses[key])}</span></div>
+    </div>`;
+  return `
+    <div class="card" style="margin-top:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;gap:8px;flex-wrap:wrap;">
+        <div class="metric-label" style="margin:0;">Own / Investor / Overall</div>
+        <select id="own-period" onchange="setOwnershipPeriod(this.value)" style="padding:5px 8px;border:1px solid var(--border-strong);border-radius:var(--radius);font-size:12.5px;">
+          <option value="all" ${ownershipPeriodKey==='all'?'selected':''}>All-Time</option>
+          ${keys.map(k=>`<option value="${k}" ${ownershipPeriodKey===k?'selected':''}>${k}</option>`).join('')}
+        </select>
+      </div>
+      <div style="font-size:12px;color:var(--text-2);margin-bottom:10px;">Showing: <strong>${periodLabel}</strong>. Subscriber counts are current (not historical).</div>
+      ${t.counts.unassigned>0 ? `<div style="margin-bottom:10px;"><span class="tag tag-amber">${t.counts.unassigned} subscriber${t.counts.unassigned===1?'':'s'} Unassigned — needs manual tagging</span></div>` : ''}
+      <div class="grid-4" style="grid-template-columns:repeat(3,1fr);">
+        ${col('own','Own','tag-green')}
+        ${col('investor','Investor','tag-blue')}
+        ${col('overall','Overall','tag-gray')}
+      </div>
+      <div style="font-size:12px;color:var(--text-2);margin-top:10px;display:flex;gap:16px;flex-wrap:wrap;">
+        <span>Unassigned / legacy revenue: <strong>${peso(t.revenue.unassigned)}</strong></span>
+        <span>Unclassified legacy expenses: <strong>${peso(t.expenses.unclassified)}</strong></span>
+      </div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:6px;">Revenue and expenses recorded before Own/Investor tagging existed are never guessed into Own or Investor — they appear only in Overall and in the two legacy lines above (Own + Investor + legacy = Overall).</div>
+    </div>
+    ${(()=>{
+      const today = todayLocal(), rc = BILL.receivables(DATA, today), ck = BILL.collectionsByKind(DATA, period), P = (c)=>peso(BILL.fromC(c));
+      const row = (l,v,strong)=>`<div style="font-size:12.5px;color:var(--text-2);display:flex;justify-content:space-between;padding:2px 0;"><span>${l}</span><span>${strong?'<strong>'+v+'</strong>':v}</span></div>`;
+      return `<div class="card" style="margin-top:16px;">
+        <div class="metric-label" style="margin-bottom:6px;">Collections &amp; receivables</div>
+        <div style="font-size:12px;color:var(--text-2);margin-bottom:10px;">Collected cash for <strong>${periodLabel}</strong> (actual recorded payments only). Receivables are billed charges not yet paid, as of today — they are never counted as income.</div>
+        <div class="grid-4" style="grid-template-columns:repeat(2,1fr);">
+          <div>
+            <div style="font-weight:600;font-size:12px;margin-bottom:4px;">Cash collected</div>
+            ${row('Subscription collections', P(ck.subscription+ck.legacy))}
+            ${row('Installation collections', P(ck.installation))}
+            ${row('Prior-balance collections', P(ck.opening))}
+            ${ck.credit?row('Held as account credit', P(ck.credit)):''}
+            ${row('Total cash collected', P(ck.subscription+ck.legacy+ck.installation+ck.opening+ck.credit), true)}
+          </div>
+          <div>
+            <div style="font-weight:600;font-size:12px;margin-bottom:4px;">Receivables (as of ${today})</div>
+            ${row('Total billed outstanding', P(rc.total), true)}
+            ${row('Due now', P(rc.dueNow))}
+            ${row('&nbsp;&nbsp;of which past due', P(rc.pastDue))}
+            ${row('Future scheduled (billed, not yet due)', P(rc.future))}
+            ${row('Subscription receivables', P(rc.byKind.subscription))}
+            ${row('Installation receivables', P(rc.byKind.installation))}
+            ${rc.byKind.opening?row('Verified prior balances', P(rc.byKind.opening)):''}
+            ${rc.credit?row('Available account credit', P(rc.credit)):''}
+            ${rc.pendingRate?row('Pending Rate Verification (not counted above)', P(rc.pendingRate)):''}
+          </div>
+        </div>
+        ${rc.unreviewed?`<div style="margin-top:8px;"><span class="tag tag-amber">${rc.unreviewed} subscriber${rc.unreviewed===1?'':'s'} not yet verified — excluded from receivables</span></div>`:''}
+        <div style="font-size:11px;color:var(--text-3);margin-top:6px;">Payments recorded before installation tracking are shown as subscription collections. Future billing cycles that have not been generated yet are not receivables.</div>
+      </div>`; })()}`;
+}
+function drawOverviewCharts(){
+  const months = overviewPeriod === 'monthly'
+    ? ['Apr','May','Jun','Jul','Aug','Sep']
+    : ['2022','2023','2024','2025','2026'];
+  // synthesize a simple trend from recorded payments' totals repeated as placeholder pattern for now-months, real last bucket = actual total
+  const totalCollected = DATA.payments.reduce((s,p)=>s+p.amount,0);
+  const seriesLen = months.length;
+  const vals = months.map((m,i)=> i === seriesLen-1 ? totalCollected : Math.round(totalCollected*(0.5+0.1*i)) );
+  new Chart(document.getElementById('collectionsChart'), {
+    type:'bar',
+    data:{ labels:months, datasets:[{ label:'Collected', data:vals, backgroundColor:'#2a78d6', borderRadius:4, maxBarThickness:24 }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{beginAtZero:true, ticks:{callback:v=>'\u20b1'+v.toLocaleString()}}, x:{grid:{display:false}} } }
+  });
+  const statusCounts = { paid:0, pending:0, overdue:0, disconnected:0 };
+  DATA.subscribers.filter(s=>!s.archived && !s.permanentlyDeleted).forEach(s => statusCounts[s.status] = (statusCounts[s.status]||0)+1);
+  new Chart(document.getElementById('statusChart'), {
+    type:'doughnut',
+    data:{ labels:['Paid','Pending','Overdue','Disconnected'], datasets:[{ data:[statusCounts.paid,statusCounts.pending,statusCounts.overdue,statusCounts.disconnected], backgroundColor:['#008300','#eda100','#e34948','#898781'] }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom', labels:{boxWidth:10, font:{size:11}}}} }
+  });
+}
+
+/* ============ SUBSCRIBERS ============ */
+let subSearch = '';
+let showArchivedSubs = false;
+function renderSubscribers(){
+  const root = document.getElementById('page-root');
+  const canAdd = can('add_subscriber');
+  root.innerHTML = `
+    <div class="page-head">
+      <div><h2 class="page-title">Subscribers</h2><p class="page-sub">${DATA.subscribers.filter(s=>!s.archived).length} active subscribers</p></div>
+      ${canAdd ? '<button class="btn btn-primary" onclick="openSubscriberModal()"><i class="ti ti-plus" aria-hidden="true"></i> Add subscriber</button>' : ''}
+    </div>
+    ${(()=>{ const rr = rateReviewList(); return rr.length ? `<div style="background:var(--amber-bg);color:var(--amber);border-radius:var(--radius);padding:10px 12px;font-size:12.5px;margin-bottom:12px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;"><span><strong>${rr.length}</strong> monthly charge${rr.length>1?'s were':' was'} created for a past period with no recorded rate. The amount shown is only a placeholder and no reminders are sent until you confirm it.</span>${can('edit_subscriber')?'<button class="btn btn-primary" onclick="openRateReviewModal()">Confirm rates</button>':''}</div>` : ''; })()}
+    ${(()=>{ const n = DATA.subscribers.filter(reviewPending).length; return n ? `<div style="background:var(--amber-bg);color:var(--amber);border-radius:var(--radius);padding:10px 12px;font-size:12.5px;margin-bottom:12px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;"><span><strong>${n}</strong> subscriber${n>1?'s':''} need a billing-baseline check. Until verified, they get no automatic reminders and no balance is assumed.</span>${can('edit_subscriber')?'<button class="btn btn-primary" onclick="openBillingReviewModal()">Review billing</button>':''}</div>` : ''; })()}
+    <div class="toolbar">
+      <div class="search-box"><i class="ti ti-search" aria-hidden="true"></i><input type="text" placeholder="Search subscribers" id="sub-search" value="${escapeHtml(subSearch)}"></div>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-2);white-space:nowrap;">
+        <input type="checkbox" id="sub-show-archived" ${showArchivedSubs?'checked':''}> Show archived
+      </label>
+    </div>
+    <div class="card" style="padding:0;overflow-x:auto;">
+      <table>
+        <thead><tr><th>Name</th><th>Plan</th><th>Contact</th><th>Next due</th><th>Status</th><th></th></tr></thead>
+        <tbody id="sub-tbody"></tbody>
+      </table>
+    </div>
+  `;
+  document.getElementById('sub-search').addEventListener('input', e=>{ subSearch = e.target.value; renderSubTable(); });
+  document.getElementById('sub-show-archived').addEventListener('change', e=>{ showArchivedSubs = e.target.checked; renderSubTable(); });
+  renderSubTable();
+}
+function renderSubTable(){
+  const q = subSearch.toLowerCase();
+  const list = DATA.subscribers.filter(s => !s.permanentlyDeleted && !!s.archived === showArchivedSubs && (s.name.toLowerCase().includes(q) || s.address.toLowerCase().includes(q)));
+  const tbody = document.getElementById('sub-tbody');
+  if(!list.length){ tbody.innerHTML = `<tr><td colspan="6"><div class="empty-note">${showArchivedSubs ? 'No archived subscribers.' : 'No subscribers match your search.'}</div></td></tr>`; return; }
+  const canEdit = can('edit_subscriber');
+  tbody.innerHTML = list.map(s => `
+    <tr>
+      <td><div style="font-weight:600;">${escapeHtml(s.name)}</div><div style="color:var(--text-3);font-size:12px;">${escapeHtml(s.address)}</div></td>
+      <td>${escapeHtml(s.plan)}<div style="color:var(--text-3);font-size:12px;">${peso(s.rate)}/mo</div></td>
+      <td style="font-size:12.5px;color:var(--text-2);">${escapeHtml(s.phone)}</td>
+      <td>${subDueCell(s)}</td>
+      <td>${statusTagFor(s)}</td>
+      <td style="text-align:right;white-space:nowrap;">
+        ${showArchivedSubs
+          ? `<button class="icon-btn ${canEdit?'':'disabled'}" onclick="restoreSubscriber('${s.id}')" aria-label="Restore ${escapeHtml(s.name)}" title="Restore"><i class="ti ti-arrow-back-up" aria-hidden="true"></i></button>
+             <button class="icon-btn ${canEdit?'':'disabled'}" onclick="openDeleteSubscriberModal('${s.id}')" aria-label="Delete ${escapeHtml(s.name)}" title="Delete"><i class="ti ti-trash" aria-hidden="true"></i></button>`
+          : `<button class="icon-btn ${canEdit?'':'disabled'}" onclick="openSubscriberModal('${s.id}')" aria-label="Edit ${escapeHtml(s.name)}"><i class="ti ti-edit" aria-hidden="true"></i></button>
+             ${s.status === 'disconnected'
+                ? `<button class="icon-btn ${canEdit?'':'disabled'}" onclick="reconnectSubscriber('${s.id}')" aria-label="Reconnect ${escapeHtml(s.name)}"><i class="ti ti-plug-connected" aria-hidden="true"></i></button>`
+                : `<button class="icon-btn ${canEdit?'':'disabled'}" onclick="openPaymentModal('${s.id}')" aria-label="Pay now for ${escapeHtml(s.name)}" title="Pay now"><i class="ti ti-cash" aria-hidden="true"></i></button>
+                   ${canExtend(s) ? `<button class="icon-btn ${canEdit?'':'disabled'}" onclick="extendSubscriber('${s.id}')" aria-label="Extend ${escapeHtml(s.name)}" title="Grant extension"><i class="ti ti-calendar-plus" aria-hidden="true"></i></button>` : ''}
+                   <button class="icon-btn ${canEdit?'':'disabled'}" onclick="disconnectSubscriber('${s.id}')" aria-label="Disconnect ${escapeHtml(s.name)}" title="Disconnect"><i class="ti ti-plug-x" aria-hidden="true"></i></button>`
+             }
+             <button class="icon-btn ${canEdit?'':'disabled'}" onclick="archiveSubscriber('${s.id}')" aria-label="Archive ${escapeHtml(s.name)}" title="Archive"><i class="ti ti-archive" aria-hidden="true"></i></button>`
+        }
+      </td>
+    </tr>
+  `).join('');
+}
+async function archiveSubscriber(id){
+  if(!can('edit_subscriber')) return;
+  if(!confirm('Archive this subscriber? They\'ll be hidden from the main list but can be restored later.')) return;
+  const s = DATA.subscribers.find(x=>x.id===id);
+  if(!s) return;
+  s.archived = true;
+  logAudit(`Archived subscriber ${s.name}`);
+  await saveData();
+  navigate('subscribers');
+}
+async function restoreSubscriber(id){
+  if(!can('edit_subscriber')) return;
+  const s = DATA.subscribers.find(x=>x.id===id);
+  if(!s) return;
+  s.archived = false;
+  logAudit(`Restored subscriber ${s.name}`);
+  await saveData();
+  navigate('subscribers');
+}
+
+/* ============ ARCHIVED SUBSCRIBER DELETE (HANDOFF #002, Section 5) ============
+   Dependency inspection finding: Payments store subscriberId, and the
+   Payments/Transactions tables and the Google Sheets export resolve that ID
+   back to a name via `(subscribers.find(...)||{}).name || 'Unknown'`. A true
+   hard delete wouldn't crash that lookup, but it WOULD silently turn every
+   past payment's subscriber name into "Unknown" across Payments,
+   Transactions and Sheets -- a real loss of financial-history readability.
+   Per HQ's explicit instruction ("financial/history integrity takes
+   priority over hard deletion... recommend a safe alternative such as
+   anonymization"), this implements anonymization instead of a hard
+   DELETE: the record (and its id, so payment history keeps resolving)
+   stays, but every identifying field is cleared and it's hidden from
+   every list via permanentlyDeleted. */
+function openDeleteSubscriberModal(id){
+  if(!can('edit_subscriber')) return;
+  const s = DATA.subscribers.find(x=>x.id===id);
+  if(!s || s.permanentlyDeleted || !s.archived) return;
+  const body = document.getElementById('modal-body');
+  body.innerHTML = `
+    <h3 style="color:var(--red);">Delete archived subscriber</h3>
+    <p style="font-size:13px;color:var(--text-2);">You are about to permanently delete:</p>
+    <div class="card" style="background:var(--gray-bg);margin-bottom:12px;">
+      <div style="font-weight:600;">${escapeHtml(s.name)}</div>
+      <div style="font-size:12px;color:var(--text-2);">${escapeHtml(s.address)}</div>
+    </div>
+    <p style="font-size:12.5px;color:var(--red);line-height:1.5;">This cannot be undone. To protect financial history, SignalDesk does not erase payment records tied to this subscriber -- their past payments remain in Payments/Transactions/Sheets, but this subscriber's name, address, contact and network details will be <strong>irreversibly removed</strong> and replaced with "Deleted Subscriber". Older Activity Log lines that mention this person's name will have the name replaced with the record ID; the entries, dates and amounts are kept.</p>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn" style="background:var(--red);border-color:var(--red);color:#fff;" onclick="permanentlyDeleteSubscriber('${s.id}')">Delete permanently</button>
+    </div>
+  `;
+  document.getElementById('modal-bg').classList.add('show');
+}
+async function permanentlyDeleteSubscriber(id){
+  if(!can('edit_subscriber')) return;
+  const s = DATA.subscribers.find(x=>x.id===id);
+  if(!s || s.permanentlyDeleted || !s.archived) return; // blocks duplicate deletion and deleting non-archived records
+  const originalName = s.name;
+  s.name = 'Deleted Subscriber';
+  s.address = ''; s.email=''; s.phone=''; s.whatsapp=''; s.fb=''; s.messenger='';
+  s.accountUsername=''; s.napNumber=''; s.ponNumber=''; s.connectionDate=null;
+  s.permanentlyDeleted = true;
+  s.deletedAt = todayLocal();
+  // HANDOFF #004 D7: redact the person's name from free-text activity-log lines (entries themselves, timestamps,
+  // actors and amounts are kept, so the audit sequence stays intact).
+  if(originalName && originalName.trim().length>=2){
+    const re = new RegExp(originalName.trim().replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi');
+    (DATA.auditLog||[]).forEach(a=>{ if(a && typeof a.text==='string') a.text = a.text.replace(re,'[record '+id+']'); });
+  }
+  logAudit(`Permanently deleted archived subscriber record ${id} (payment history preserved under "Deleted Subscriber")`);
+  await saveData();
+  closeModal();
+  navigate('subscribers');
+}
+async function sendExtensionGrantedEmail(s, outstanding, originalDue){
+  if(!s.email) return;
+  try{
+    await fetch('/api/send-receipt', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
+      type:'extension-granted', to:s.email, subscriberName:s.name, accountUsername:s.accountUsername||'',
+      plan:s.plan, amount:outstanding, originalDue:originalDue||'', extensionUntil:s.extensionUntil, businessName:DATA.business.name, logoUrl:DATA.business.logo||''
+    })});
+  }catch(e){ console.warn('Extension email failed (extension is still saved):', e); }
+}
+
+/* ============ PAY NOW / DISCONNECT / RECONNECT / EXTEND (V1.8) ============ */
+async function disconnectSubscriber(id){
+  if(!can('edit_subscriber')) return;
+  const s = DATA.subscribers.find(x=>x.id===id);
+  if(!s) return;
+  if(!confirm(`Disconnect ${s.name}? They'll stop receiving reminders and no new monthly charges are created while disconnected. Any unpaid balance already billed is kept. This can be reversed with Reconnect.`)) return;
+  const today = todayLocal();
+  // Payment history is never deleted (HANDOFF #004). Any active extension is closed with its history kept.
+  if(s.billing){ s.billing.obligations.forEach(it=>{ if(it.ext && !it.ext.resolution){ it.ext.resolution='disconnected'; it.ext.resolvedAt=today; s.billing.extensionLog.push(Object.assign({itemId:it.id},it.ext)); } }); }
+  s.extensionGrantedAt = null; s.extensionUntil = null; s.extensionReason=''; s.extensionGrantedBy=null;
+  s.status = 'disconnected';
+  s.statusSince = today;
+  s.disconnectedAt = today;
+  logAudit(`Disconnected subscriber ${s.name}`);
+  await saveData();
+  navigate('subscribers');
+}
+async function reconnectSubscriber(id){
+  if(!can('edit_subscriber')) return;
+  const s = DATA.subscribers.find(x=>x.id===id);
+  if(!s) return;
+  if(!confirm(`Reconnect ${s.name}? Billing resumes from their next billing date. No charges are created for the time they were disconnected; any unpaid balance from before is kept.`)) return;
+  const today = todayLocal();
+  s.disconnectedAt = null; s.status = 'paid'; s.statusSince = today;
+  if(!s.billing) BILL.migrateLegacy(s,today);
+  const r = BILL.reconnect(s,today);
+  if(r && r.ok && !r.needsReview){ BILL.daily(s,today); BILL.syncLegacyFields(s,today); }
+  logAudit(`Reconnected subscriber ${s.name}${r&&r.needsReview?' (billing baseline needs review)':''}`);
+  await saveData();
+  navigate('subscribers');
+}
+/* ============ GRANT EXTENSION — MANUAL WORKFLOW (HANDOFF #002 Sections
+   17-23). Replaces the old automatic "~1 month + pay double next cycle"
+   behavior with an operator-chosen deadline and no forced duration or
+   billing assumption. The subscriber's normal recurring billing day is
+   never touched by an extension — only the current cycle's actionable
+   deadline changes. ============ */
+function extendSubscriber(id){
+  if(!can('edit_subscriber')) return;
+  const s = DATA.subscribers.find(x=>x.id===id);
+  if(!s) return;
+  const today = todayLocal();
+  const c = s.billing && !s.billing.review ? BILL.controlling(s,today) : null;
+  if(!c){ alert('This subscriber has no verified unpaid subscription charge to extend.'); return; }
+  const rows = BILL.breakdownFor(s,c,today);
+  const totalC = rows.reduce((a,r)=>a+r.remainingC,0);
+  const minDate = BILL.addDays(c.dueDate>today?c.dueDate:today, c.dueDate>today?1:0);
+  const body = document.getElementById('modal-body');
+  body.innerHTML = `
+    <h3>Grant payment extension</h3>
+    <p style="font-size:13px;color:var(--text-2);margin:0 0 4px;">Subscriber: <strong>${escapeHtml(s.name)}</strong></p>
+    <p style="font-size:12.5px;color:var(--text-2);margin:0 0 10px;">Outstanding obligation: <strong>${peso(BILL.fromC(totalC))}</strong> &middot; Original due date: <strong>${c.dueDate}</strong></p>
+    ${rows.length>1?`<div style="font-size:12px;color:var(--text-3);margin-bottom:10px;">${rows.map(r=>`${r.kind==='subscription'?'Subscription':'Installation'}: ${peso(BILL.fromC(r.remainingC))}`).join(' &middot; ')}</div>`:''}
+    <div class="field"><label>Extension deadline</label><input id="ext-deadline" type="date" min="${minDate}" value="${minDate}"></div>
+    <div class="field"><label>Reason / note <span style="color:var(--text-3);">(optional)</span></label><textarea id="ext-reason" rows="2" style="width:100%;padding:9px 10px;border:1px solid var(--border-strong);border-radius:var(--radius);"></textarea></div>
+    <div style="font-size:11.5px;color:var(--text-3);margin-bottom:4px;">This does not forgive the balance, change ${escapeHtml(s.name)}'s billing day, or double next month's bill. If it is still unpaid after the deadline, the account becomes Overdue immediately.</div>
+    <div id="ext-err" style="color:var(--red);font-size:12px;"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="grantExtension('${s.id}')">Grant extension</button>
+    </div>
+  `;
+  document.getElementById('modal-bg').classList.add('show');
+}
+async function grantExtension(id){
+  const s = DATA.subscribers.find(x=>x.id===id);
+  if(!s) return;
+  const deadline = document.getElementById('ext-deadline').value;
+  const errEl = document.getElementById('ext-err');
+  if(!deadline){ errEl.textContent = 'Choose an extension deadline'; return; }
+  const today = todayLocal();
+  const c = s.billing && !s.billing.review ? BILL.controlling(s,today) : null;
+  if(!c){ errEl.textContent = 'No verified unpaid subscription charge to extend'; return; }
+  const reason = document.getElementById('ext-reason').value.trim();
+  const r = BILL.grantExtension(s, c.id, deadline, today, reason, SESSION ? SESSION.name : 'System');
+  if(!r.ok){ errEl.textContent = r.error; return; }
+  BILL.syncLegacyFields(s,today);
+  s.statusSince = today;
+  const totalC = BILL.breakdownFor(s,c,today).reduce((a,x)=>a+x.remainingC,0);
+  logAudit(`Granted ${s.name} a payment extension until ${deadline}${reason?(' — '+reason):''}`);
+  const saved = await saveData();
+  closeModal();
+  navigate('subscribers');
+  if(saved) sendExtensionGrantedEmail(s, BILL.fromC(totalC), c.dueDate);
+}
+
+/* ============ RATE REVIEW (HANDOFF #005 T2) ============ */
+function rateReviewList(){ const out=[]; DATA.subscribers.forEach(s=>{ if(s.permanentlyDeleted||s.archived||!s.billing||s.billing.review) return; BILL.rateReviews(s).forEach(it=>out.push({s,it})); }); return out; }
+function openRateReviewModal(){
+  if(!can('edit_subscriber')) return; const list=rateReviewList(); if(!list.length){ closeModal(); return; }
+  document.getElementById('modal-body').innerHTML=`<h3>Confirm monthly rates</h3>
+    <p style="font-size:12.5px;color:var(--text-2);">These charges belong to past periods and SignalDesk has no record of the rate that applied then, so it did not guess. Enter the amount that was actually agreed for each period.</p>
+    <div style="max-height:50vh;overflow:auto;">${list.map(({s,it})=>`<div class="card" style="padding:10px;margin-bottom:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;" data-rr="${s.id}|${it.id}"><span style="flex:1;min-width:140px;"><strong>${escapeHtml(s.name)}</strong> · due ${it.dueDate}<br><span style="font-size:11px;color:var(--text-3);">placeholder ${peso(BILL.fromC(it.rateReview.placeholderC))}</span></span><input class="rr-amt" type="number" min="0" step="0.01" placeholder="PHP" style="width:100px;"></div>`).join('')}</div>
+    <div id="rr-err" style="color:var(--red);font-size:12px;margin-top:6px;"></div>
+    <div class="modal-actions"><button class="btn" onclick="closeModal()">Close</button><button class="btn btn-primary" onclick="applyRateReview()">Confirm entered amounts</button></div>`;
+  document.getElementById('modal-bg').classList.add('show');
+}
+async function applyRateReview(){
+  const today=todayLocal(), errs=[]; let done=0;
+  document.querySelectorAll('[data-rr]').forEach(r=>{ const v=r.querySelector('.rr-amt').value; if(v==='') return; const [sid,iid]=r.dataset.rr.split('|'); const s=DATA.subscribers.find(x=>x.id===sid); if(!s) return;
+    const res=BILL.resolveRateReview(s,iid,BILL.toC(v),SESSION?SESSION.name:null,today); if(!res.ok){ errs.push(s.name+': '+res.error); return; } BILL.syncLegacyFields(s,today); logAudit(`Confirmed rate for ${s.name} charge ${iid}: ${peso(v)}`); done++; });
+  document.getElementById('rr-err').textContent=errs.join(' | ');
+  if(done){ const ok=await saveData(); if(!ok) return; if(!errs.length) closeModal(); navigate('subscribers'); }
+}
+/* ============ BILLING REVIEW (HANDOFF #004 D1) ============ */
+function rvRead(row){
+  return { id:row.dataset.rv, connectionDate:row.querySelector('.rv-conn').value||null, billingDay:Number(row.querySelector('.rv-day').value)||null,
+    firstDue:row.querySelector('.rv-first').value||null, opening:{ state:row.querySelector('.rv-open').value, amountC:BILL.toC(row.querySelector('.rv-amt').value) } };
+}
+// Dry-run of an approval on a COPY: shows exactly what the operator is about to create. Nothing is saved.
+function rvSimulate(orig, v, today, suppress){
+  const s = JSON.parse(JSON.stringify(orig));
+  const r = BILL.resolveReview(s, { today, billingDay:v.billingDay, firstDue:v.firstDue, connectionDate:v.connectionDate, opening:v.opening, suppressPast:suppress, by:null });
+  return { s, r };
+}
+function rvRefresh(row){
+  if(!row) return; const today = todayLocal(); const orig = DATA.subscribers.find(x=>x.id===row.dataset.rv); if(!orig) return;
+  const v = rvRead(row), box = row.querySelector('.rv-prev'), suppress = document.getElementById('rv-suppress').checked;
+  row.querySelector('.rv-amt').style.display = v.opening.state==='verified-positive' ? '' : 'none';
+  const warn = [];
+  if(!v.billingDay || v.billingDay<1 || v.billingDay>31) warn.push('Enter a billing day (1–31).');
+  if(v.connectionDate && v.connectionDate>today) warn.push('Connection date is in the future.');
+  if(v.opening.state==='verified-positive' && !(v.opening.amountC>0)) warn.push('Enter the verified amount owed.');
+  if(v.connectionDate && v.billingDay && BILL.dayOf(v.connectionDate)!==v.billingDay) warn.push(`Billing day ${v.billingDay} differs from the connection day (${BILL.dayOf(v.connectionDate)}). That is fine if it was agreed — please confirm.`);
+  if(!v.connectionDate) warn.push('No connection date on file (informational only).');
+  if(v.opening.state==='unverified') warn.push('Earlier balance is NOT verified: it will not be billed, counted or shown in any customer email.');
+  let html = '';
+  if(!warn.some(w=>/^Enter /.test(w)) ){
+    const { s, r } = rvSimulate(orig, v, today, suppress);
+    if(!r.ok){ warn.push(r.error); }
+    else {
+      const b = s.billing, m = BILL.summary(s,today);
+      const unpaid = b.obligations.filter(o=>BILL.remC(o)>0);
+      const past = unpaid.filter(o=>o.dueDate && o.dueDate<today);
+      const nd = BILL.nextDue(s,today);
+      html += `<div style="font-size:12px;line-height:1.5;">
+        <div><strong>Next due date:</strong> ${nd||'-'} &nbsp; <strong>Outstanding after approval:</strong> ${peso(BILL.fromC(m.outstandingC))} <span style="color:var(--text-3);">(due now ${peso(BILL.fromC(m.dueNowC))}, not yet due ${peso(BILL.fromC(m.futureC))})</span></div>
+        <div style="color:var(--text-2);">${unpaid.length?unpaid.map(o=>`${o.kind==='opening'?'Earlier balance':'Subscription'} ${o.dueDate||'(undated)'} ${peso(BILL.fromC(BILL.remC(o)))}`).join(' · '):'No charges created yet.'}</div>
+        <div style="color:var(--text-2);"><strong>Notices:</strong> ${past.length?(suppress?`${past.length} charge(s) already past due — reminders for them are suppressed; `:`${past.length} charge(s) already past due — reminders WILL be sent on the next run; `):''}${nd?`first automatic reminder for the next charge on ${BILL.addDays(nd,1)} (Pending)`:'none scheduled'}${s.email?'':' <span style="color:var(--amber);">— no email on file, notices will be skipped</span>'}.</div>
+      </div>`;
+      if(past.length && v.firstDue && v.firstDue<today) warn.push(`Charges for ${past.length} period(s) before today will be created from the first billed due date. Only keep this if that debt is real.`);
+    }
+  }
+  box.innerHTML = html + (warn.length?`<div style="font-size:11.5px;color:var(--amber);margin-top:4px;">${warn.map(escapeHtml).join('<br>')}</div>`:'');
+  row.dataset.rvblock = warn.some(w=>/^Enter |future|too far|required/i.test(w)) ? '1' : '';
+}
+function rvFilter(){
+  const q = (document.getElementById('rv-search').value||'').toLowerCase(), f = document.getElementById('rv-filter').value;
+  document.querySelectorAll('[data-rv]').forEach(r=>{
+    const s = DATA.subscribers.find(x=>x.id===r.dataset.rv); if(!s) return;
+    const hit = s.name.toLowerCase().includes(q) && (f==='all' || (f==='late' ? (s.status==='pending'||s.status==='overdue') : (s.status!=='pending'&&s.status!=='overdue')));
+    r.style.display = hit ? '' : 'none';
+  });
+}
+function rvTickShown(on){ document.querySelectorAll('[data-rv]').forEach(r=>{ if(r.style.display!=='none') r.querySelector('.rv-sel').checked = on; }); rvCount(); }
+function rvCount(){ const n = document.querySelectorAll('.rv-sel:checked').length; const b = document.getElementById('rv-apply'); if(b) b.textContent = n ? `Apply to ${n} ticked` : 'Apply to ticked'; }
+function openBillingReviewModal(){
+  if(!can('edit_subscriber')) return;
+  const today = todayLocal();
+  const list = DATA.subscribers.filter(reviewPending).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  const body = document.getElementById('modal-body');
+  if(!list.length){ closeModal(); return; }
+  body.innerHTML = `
+    <h3>Review billing baselines <span style="font-weight:400;font-size:12px;color:var(--text-3);">${list.length} to review</span></h3>
+    <p style="font-size:12.5px;color:var(--text-2);margin:0 0 8px;">Nothing is applied automatically. For each subscriber confirm: <strong>connection date, billing day, next due date, earlier balance, charges that will exist, and when notices start</strong> (shown under each row as a preview). Tick the rows you have checked, then press Apply. Suggested values come from the stored due date; the first billed due date defaults to the <em>next</em> billing date so no old charges are invented.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px;">
+      <input id="rv-search" type="text" placeholder="Search name" oninput="rvFilter()" style="flex:1;min-width:120px;">
+      <select id="rv-filter" onchange="rvFilter()"><option value="all">All</option><option value="late">Stored status Pending/Overdue</option><option value="ok">Other</option></select>
+      <button class="btn" onclick="rvTickShown(true)">Tick all shown</button><button class="btn" onclick="rvTickShown(false)">Clear ticks</button>
+    </div>
+    <label style="display:flex;gap:6px;align-items:center;font-size:12px;margin-bottom:8px;"><input type="checkbox" id="rv-suppress" checked onchange="document.querySelectorAll('[data-rv]').forEach(rvRefresh)"> Don't send reminders for charges that are already past due when I approve (recommended)</label>
+    <div style="max-height:50vh;overflow:auto;">
+    ${list.map(s=>{ const g = BILL.reviewSuggestion(s,today); return `
+      <div class="card" style="margin-bottom:8px;padding:10px;" data-rv="${s.id}">
+        <label style="display:flex;gap:8px;align-items:center;font-weight:600;flex-wrap:wrap;"><input type="checkbox" class="rv-sel" onchange="rvCount()"> ${escapeHtml(s.name)} <span style="font-weight:400;color:var(--text-3);font-size:11.5px;">stored: due ${s.due||'-'}, ${escapeHtml(s.status||'-')} · ${peso(s.rate)}/mo</span></label>
+        <div style="font-size:11px;color:var(--text-3);margin:2px 0 6px;">${escapeHtml(g.note)}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:12px;" oninput="rvRefresh(this.closest('[data-rv]'))" onchange="rvRefresh(this.closest('[data-rv]'))">
+          <label>Connection date <input class="rv-conn" type="date" value="${s.connectionDate||''}"></label>
+          <label>Billing day <input class="rv-day" type="number" min="1" max="31" value="${g.billingDay||''}" style="width:60px;"></label>
+          <label>First billed due date <input class="rv-first" type="date" value="${g.firstDue||''}"></label>
+          <label>Earlier unpaid balance <select class="rv-open"><option value="unverified">Not verified</option><option value="verified-zero">Verified: none</option><option value="verified-positive">Verified: amount</option></select> <input class="rv-amt" type="number" min="0" placeholder="PHP" style="width:80px;display:none;"></label>
+        </div>
+        <div class="rv-prev" style="margin-top:6px;"></div>
+      </div>`; }).join('')}
+    </div>
+    <div id="rv-err" style="color:var(--red);font-size:12px;margin-top:6px;"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Close</button>
+      <button class="btn btn-primary" id="rv-apply" onclick="applyBillingReview()">Apply to ticked</button>
+    </div>
+  `;
+  document.getElementById('modal-bg').classList.add('show');
+  document.querySelectorAll('[data-rv]').forEach(rvRefresh);
+}
+async function applyBillingReview(){
+  const today = todayLocal(), errEl = document.getElementById('rv-err');
+  const suppress = document.getElementById('rv-suppress').checked;
+  const rows = Array.from(document.querySelectorAll('[data-rv]')).filter(r=>r.querySelector('.rv-sel').checked);
+  if(!rows.length){ errEl.textContent = 'Tick at least one subscriber to approve.'; return; }
+  const errs = []; let done = 0;
+  rows.forEach(r=>{
+    const s = DATA.subscribers.find(x=>x.id===r.dataset.rv); if(!s) return;
+    const v = rvRead(r); rvRefresh(r);
+    if(r.dataset.rvblock){ errs.push(s.name+': fix the highlighted item first'); return; }
+    const res = BILL.resolveReview(s, { today, billingDay:v.billingDay, firstDue:v.firstDue, connectionDate:v.connectionDate, opening:v.opening, suppressPast:suppress, by:SESSION?SESSION.name:null });
+    if(!res.ok){ errs.push(s.name+': '+res.error); return; }
+    BILL.syncLegacyFields(s,today); s.statusSince = today; done++;
+    logAudit(`Verified billing baseline for ${s.name} (billing day ${s.billing.billingDay}, first due ${s.billing.firstDue}, earlier balance: ${s.billing.opening.state})`);
+  });
+  if(errs.length){ errEl.textContent = errs.join(' | '); }
+  if(done){ const ok = await saveData(); if(!ok) return; if(!errs.length){ closeModal(); } navigate('subscribers'); if(errs.length) openBillingReviewModal(); }
+}
+
+function planOptions(selectedPlan){
+  return (DATA.plans||[]).map(p => `<option value="${escapeHtml(p.name)}" data-rate="${p.rate}" ${selectedPlan===p.name?'selected':''}>${escapeHtml(p.name)} — ${peso(p.rate)}/mo</option>`).join('');
+}
+
+function isNewConnectionPath(connectionDate, today){
+  // A connection whose FIRST postpaid due date (one month after connection) is still in the future is a genuinely new
+  // subscriber (billed from that first due date). Anything older is an existing subscriber being registered now:
+  // no retroactive charges, next due = next billing date (HANDOFF #004 Sections 6-7).
+  if(!connectionDate) return true;
+  return BILL.dueAfter(BILL.dayOf(connectionDate), connectionDate) > today;
+}
+function rateEffToggle(){ const w=document.getElementById('f-rate-eff-wrap'); if(!w) return; const cur = Number(w.dataset.cur); w.style.display = (Number(document.getElementById('f-rate').value)!==cur) ? '' : 'none'; }
+function refreshSubForm(){
+  const el = (i)=>document.getElementById(i); if(!el('f-connection-date') || !el('sec-install')) return; // edit form has no installation/opening sections
+  const today = todayLocal(); const cd = el('f-connection-date').value || today;
+  const isNew = isNewConnectionPath(cd, today);
+  el('sec-install').style.display = isNew ? '' : 'none';
+  el('sec-opening').style.display = isNew ? 'none' : '';
+  const arr = el('f-inst-arr').value;
+  el('inst-amount-row').style.display = arr==='none' ? 'none' : '';
+  const prev = el('inst-preview');
+  if(!isNew || arr==='none'){ prev.innerHTML = isNew ? '<div style="font-size:12px;color:var(--text-3);">No installation fee for this subscriber.</div>' : ''; }
+  else {
+    const totalC = BILL.toC(el('f-inst-amount').value), rateC = BILL.toC(el('f-rate').value);
+    const rows = BILL.installmentSchedule(totalC, arr, cd, BILL.dayOf(cd), rateC);
+    prev.innerHTML = `<table style="width:100%;font-size:12px;border-collapse:collapse;"><thead><tr style="color:var(--text-3);text-align:left;"><th>Due date</th><th>Subscription</th><th>Installation</th><th>Total</th></tr></thead><tbody>${rows.map(r=>`<tr style="border-top:1px solid var(--border);"><td style="padding:4px 0;">${r.date}<div style="font-size:10.5px;color:var(--text-3);">${r.label}</div></td><td>${peso(BILL.fromC(r.subscriptionC))}</td><td>${peso(BILL.fromC(r.installationC))}</td><td><strong>${peso(BILL.fromC(r.totalC))}</strong></td></tr>`).join('')}</tbody></table><div style="font-size:11px;color:var(--text-3);margin-top:4px;">Installation total ${peso(BILL.fromC(totalC))} — the schedule is saved with the subscriber and is not changed by later fee or rate changes.</div>`;
+  }
+  el('open-amount-row').style.display = el('f-open-state').value==='verified-positive' ? '' : 'none';
+}
+function openSubscriberModal(id){
+  if(id && !can('edit_subscriber')) return;
+  if(!id && !can('add_subscriber')) return;
+  const s = id ? DATA.subscribers.find(x=>x.id===id) : null;
+  const today = todayLocal();
+  const body = document.getElementById('modal-body');
+  const m = s && s.billing && !s.billing.review ? BILL.summary(s,today) : null;
+  const inst = s && s.billing && s.billing.installation ? s.billing.installation : null;
+  body.innerHTML = `
+    <h3>${s ? 'Edit subscriber' : 'Add subscriber'}</h3>
+    <div class="field"><label>Name</label><input id="f-name" value="${s?escapeHtml(s.name):''}"></div>
+    <div class="field"><label>Address</label><input id="f-address" value="${s?escapeHtml(s.address):''}"></div>
+    <div class="field"><label>Email address</label><input id="f-email" value="${s?escapeHtml(s.email):''}"></div>
+    <div class="field"><label>Phone number</label><input id="f-phone" value="${s?escapeHtml(s.phone):''}" placeholder="+63..."></div>
+    <div class="field"><label>WhatsApp number</label><input id="f-whatsapp" value="${s?escapeHtml(s.whatsapp):''}" placeholder="+63..."></div>
+    <div class="field"><label>Facebook link</label><input id="f-fb" value="${s?escapeHtml(s.fb):''}" placeholder="facebook.com/..."></div>
+    <div class="field"><label>Facebook Messenger link</label><input id="f-messenger" value="${s?escapeHtml(s.messenger):''}" placeholder="m.me/..."></div>
+    <div class="field"><label>Plan</label>
+      <select id="f-plan" onchange="const o=this.selectedOptions[0]; if(o) document.getElementById('f-rate').value=o.dataset.rate; refreshSubForm();">
+        ${planOptions(s?s.plan:null)}
+      </select>
+    </div>
+    <div class="field"><label>Monthly rate (PHP)</label><input id="f-rate" type="number" value="${s?s.rate:(DATA.plans[0]?DATA.plans[0].rate:500)}" oninput="refreshSubForm(); rateEffToggle()">
+      ${s&&s.billing&&!s.billing.review?`<div id="f-rate-eff-wrap" data-cur="${s.rate}" style="display:none;margin-top:6px;"><label style="font-size:12px;">New rate takes effect on <input id="f-rate-eff" type="date" value="${today}" min="${today}"></label><div style="font-size:11px;color:var(--text-3);">Charges already billed keep their amount. Charges due on or after this date use the new rate.</div></div>`:''}
+      ${(()=>{ const pc = s&&s.billing?BILL.pendingRateChange(s,today):null; return pc?`<div style="font-size:11.5px;color:var(--amber);margin-top:4px;">Scheduled: ${peso(BILL.fromC(pc.rateC))}/mo from ${pc.from}</div>`:''; })()}
+    </div>
+    <div class="field"><label>Connection date ${s?'<span style="color:var(--text-3);">(informational — does not change billing)</span>':'<span style="color:var(--red);">*</span>'}</label>
+      <input id="f-connection-date" type="date" value="${s&&s.connectionDate?s.connectionDate:(s?'':today)}" oninput="refreshSubForm()">
+      ${s ? '' : '<div style="font-size:11px;color:var(--text-3);margin-top:4px;">The connection date sets the recurring billing day. Billing is postpaid: the first subscription is due one month after connection. If this subscriber was connected long ago, nothing is back-charged — their next billing date is used.</div>'}
+    </div>
+    ${s ? `
+    <div class="field"><label>Billing</label>
+      <div style="font-size:12.5px;color:var(--text-2);line-height:1.6;">
+        ${s.billing && s.billing.review ? `<span class="tag tag-amber">Needs review</span> Billing baseline not verified yet. Use “Review billing” on the Subscribers page.` :
+          `Billing day: <strong>${s.billing?s.billing.billingDay:'-'}</strong> · Next due: <strong>${s.due||'-'}</strong>${m?`<br>Outstanding: <strong>${peso(BILL.fromC(m.outstandingC))}</strong> (due now ${peso(BILL.fromC(m.dueNowC))}, not yet due ${peso(BILL.fromC(m.futureC))})${m.creditC?`<br>Account credit: <strong>${peso(BILL.fromC(m.creditC))}</strong>`:''}`:''}${inst?`<br>Installation: ${peso(BILL.fromC(inst.totalC))} (${inst.paymentArrangement==='full'?'full payment':'3-month installment'})`:''}`}
+      </div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:4px;">Due dates and balances are calculated automatically — you only confirm payments, extensions and disconnections.</div>
+    </div>` : `
+    <div id="sec-opening" class="field" style="display:none;">
+      <label>Unpaid balance before SignalDesk</label>
+      <select id="f-open-state" onchange="refreshSubForm()">
+        <option value="unverified">Not verified yet (no balance assumed, none shown to customer)</option>
+        <option value="verified-zero">Verified: nothing owed</option>
+        <option value="verified-positive">Verified: amount owed</option>
+      </select>
+      <div id="open-amount-row" style="display:none;margin-top:6px;"><input id="f-open-amount" type="number" min="0" placeholder="Verified amount owed (PHP)"></div>
+    </div>
+    <div id="sec-install" class="field">
+      <label>Installation fee</label>
+      <select id="f-inst-arr" onchange="refreshSubForm()">
+        <option value="full">Full payment upon installation</option>
+        <option value="three">Three-month installment</option>
+        <option value="none">No installation fee</option>
+      </select>
+      <div id="inst-amount-row" style="margin-top:6px;"><input id="f-inst-amount" type="number" min="0" value="${DATA.business.installationFeeDefault==null?1500:DATA.business.installationFeeDefault}" oninput="refreshSubForm()"> <span style="font-size:11px;color:var(--text-3);">PHP (default from Settings; edit for this subscriber)</span></div>
+      <div id="inst-preview" style="margin-top:8px;"></div>
+    </div>`}
+    <div class="field"><label>Ownership</label>
+      <select id="f-ownership">
+        <option value="unassigned" ${(!s||s.ownership==='unassigned')?'selected':''}>Unassigned</option>
+        <option value="own" ${s&&s.ownership==='own'?'selected':''}>Own</option>
+        <option value="investor" ${s&&s.ownership==='investor'?'selected':''}>Investor</option>
+      </select>
+      <div style="font-size:11px;color:var(--text-3);margin-top:4px;">Used for Own/Investor earnings split. Existing subscribers start Unassigned and must be set manually — never inferred.</div>
+    </div>
+    <div class="field"><label>Account Username <span style="color:var(--text-3);">(optional, informational)</span></label><input id="f-account-username" value="${s?escapeHtml(s.accountUsername||''):''}"></div>
+    <div class="field"><label>NAP Number <span style="color:var(--text-3);">(optional)</span></label><input id="f-nap" value="${s?escapeHtml(s.napNumber||''):''}"></div>
+    <div class="field"><label>PON Number <span style="color:var(--text-3);">(optional)</span></label><input id="f-pon" value="${s?escapeHtml(s.ponNumber||''):''}"></div>
+    ${s ? `
+    <div class="field">
+      <label>Status</label>
+      <div style="margin-top:2px;">${statusTagFor(s)}</div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:4px;">Status is managed automatically and by the Pay Now / Disconnect / Reconnect / Extend buttons — it can't be set directly here.</div>
+    </div>` : ''}
+    <div id="f-err" style="color:var(--red);font-size:12px;"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSubscriber('${s?s.id:''}')">${s?'Save changes':'Add subscriber'}</button>
+    </div>
+  `;
+  document.getElementById('modal-bg').classList.add('show');
+  if(!s) refreshSubForm();
+}
+async function saveSubscriber(id){
+  const name = document.getElementById('f-name').value.trim();
+  if(!name){ document.getElementById('f-err').textContent = 'Enter a name first'; return; }
+  const existing = id ? DATA.subscribers.find(x=>x.id===id) : null;
+  const today = todayLocal();
+  const errEl = document.getElementById('f-err');
+  const rate = Number(document.getElementById('f-rate').value)||0;
+  if(rate<=0){ errEl.textContent = 'Enter a monthly rate greater than zero'; return; }
+  const connectionDate = document.getElementById('f-connection-date').value || null;
+  if(!existing && !connectionDate){ errEl.textContent = 'Enter the connection date'; return; }
+  if(!existing && connectionDate > today){ errEl.textContent = 'Connection date cannot be in the future'; return; }
+  const common = {
+    name,
+    address: document.getElementById('f-address').value.trim(),
+    email: document.getElementById('f-email').value.trim(),
+    phone: document.getElementById('f-phone').value.trim(),
+    whatsapp: document.getElementById('f-whatsapp').value.trim(),
+    fb: document.getElementById('f-fb').value.trim(),
+    messenger: document.getElementById('f-messenger').value.trim(),
+    plan: document.getElementById('f-plan').value,
+    rate,
+    ownership: document.getElementById('f-ownership').value,
+    connectionDate,
+    accountUsername: document.getElementById('f-account-username').value.trim(),
+    napNumber: document.getElementById('f-nap').value.trim(),
+    ponNumber: document.getElementById('f-pon').value.trim()
+  };
+  if(existing){
+    // Edits never touch billing structure; the rate only affects future/not-yet-due charges (BILL.repriceUpcoming).
+    const newRate = common.rate; delete common.rate;
+    Object.assign(existing, common);
+    existing.connectionDate = connectionDate || existing.connectionDate || null;
+    if(Number(newRate)!==Number(existing.rate)){
+      if(existing.billing && !existing.billing.review){
+        const eff = (document.getElementById('f-rate-eff')||{}).value || today;
+        const rr = BILL.setRate(existing, newRate, eff, today, SESSION?SESSION.name:null);
+        if(!rr.ok){ errEl.textContent = rr.error; return; }
+        logAudit(`Rate change for ${existing.name}: ${peso(newRate)}/mo effective ${eff}`);
+      } else existing.rate = newRate;
+    }
+    BILL.daily(existing, today); BILL.syncLegacyFields(existing, today);
+    logAudit(`Edited subscriber ${existing.name}`);
+  } else {
+    const rec = Object.assign({
+      id: 's'+Date.now()+Math.random().toString(36).slice(2,5),
+      due:'', status:'paid', statusSince: today, archived:false, disconnectedAt:null, permanentlyDeleted:false,
+      extensionGrantedAt:null, extensionUntil:null, extensionReason:'', extensionGrantedBy:null, extensionHistory:[],
+      lastWarningSentFor:null, extensionReminderSentFor:null, lastPendingReminderSentFor:null, currentPaymentId:null, billing:null
+    }, common);
+    if(isNewConnectionPath(connectionDate, today)){
+      const arr = document.getElementById('f-inst-arr').value;
+      const totalC = BILL.toC(document.getElementById('f-inst-amount').value);
+      if(arr!=='none' && !(totalC>0)){ errEl.textContent = 'Enter the installation fee amount (or choose No installation fee)'; return; }
+      BILL.onboardNew(rec, { connectionDate, today, installation: arr==='none' ? null : { totalC, arrangement: arr } });
+    } else {
+      const st = document.getElementById('f-open-state').value;
+      const amtC = BILL.toC(document.getElementById('f-open-amount').value);
+      if(st==='verified-positive' && !(amtC>0)){ errEl.textContent = 'Enter the verified amount owed'; return; }
+      BILL.onboardExisting(rec, { connectionDate, today, opening: { state: st, amountC: amtC } });
+    }
+    BILL.syncLegacyFields(rec, today);
+    DATA.subscribers.push(rec);
+    logAudit(`Added subscriber ${rec.name}`);
+  }
+  await saveData();
+  closeModal();
+  navigate('subscribers');
+}
+
+/* ============ PAID STATUS TO PAYMENT CONFIRMATION (V1.7) ============ */
+const PAYMENT_METHODS = ['GCash','Maya','BDO','GoTyme','RCBC','Cash','Other'];
+function openPaymentModal(subscriberId){
+  const s = DATA.subscribers.find(x=>x.id===subscriberId);
+  if(!s) return;
+  const today = todayLocal();
+  const body = document.getElementById('modal-body');
+  if(!s.billing || s.billing.review){
+    body.innerHTML = `<h3>Billing not verified</h3><p style="font-size:13px;color:var(--text-2);">${escapeHtml(s.name)}'s billing baseline has not been verified yet, so a payment can't be applied safely. Use <strong>Review billing</strong> on the Subscribers page first.</p><div class="modal-actions"><button class="btn" onclick="closeModal()">Close</button></div>`;
+    document.getElementById('modal-bg').classList.add('show'); return;
+  }
+  BILL.daily(s, today);
+  const m = BILL.summary(s, today);
+  const items = BILL.unpaidBilled(s, today);
+  const nextFuture = items.find(i=>i.dueDate && i.dueDate>today);
+  const defaultAmount = m.netDueNowC>0 ? BILL.fromC(m.netDueNowC) : (nextFuture ? BILL.fromC(Math.max(0,BILL.remC(nextFuture)-m.creditC)) : 0);
+  const label = (i)=> i.kind==='opening' ? 'Prior balance (verified)' : (i.kind==='installation' ? 'Installation' : 'Subscription')+' · due '+i.dueDate;
+  body.innerHTML = `
+    <h3>Record payment</h3>
+    <p style="font-size:13px;color:var(--text-2);margin:0 0 10px;">Confirm the payment you actually received from <strong>${escapeHtml(s.name)}</strong>. It is applied to the oldest charge first.</p>
+    <div class="card" style="background:var(--gray-bg);margin-bottom:12px;font-size:12.5px;line-height:1.7;">
+      ${items.length ? items.map(i=>`<div style="display:flex;justify-content:space-between;"><span>${label(i)}</span><strong>${peso(BILL.fromC(BILL.remC(i)))}</strong></div>`).join('') : '<div>No unpaid billed charges.</div>'}
+      <div style="border-top:1px solid var(--border);margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;"><span>Due now</span><strong>${peso(BILL.fromC(m.dueNowC))}</strong></div>
+      <div style="display:flex;justify-content:space-between;"><span>Total billed outstanding</span><strong>${peso(BILL.fromC(m.outstandingC))}</strong></div>
+      ${m.creditC?`<div style="display:flex;justify-content:space-between;color:var(--green);"><span>Account credit available</span><strong>${peso(BILL.fromC(m.creditC))}</strong></div>`:''}
+    </div>
+    ${s.status==='extended' ? `<div style="background:var(--accent-bg);color:var(--accent-dark);border-radius:var(--radius);padding:10px 12px;font-size:12.5px;margin-bottom:12px;">Active extension until ${s.extensionUntil||'-'}.</div>` : ''}
+    <div class="field"><label>Payment method</label>
+      <select id="pm-method">${PAYMENT_METHODS.map(m2=>`<option>${m2}</option>`).join('')}</select>
+    </div>
+    <div class="field"><label>Amount received (PHP)</label><input id="pm-amount" type="number" min="0" step="0.01" value="${defaultAmount}"></div>
+    <div class="field"><label>Date</label><input id="pm-date" type="date" value="${today}"></div>
+    <div style="font-size:11.5px;color:var(--text-3);margin-bottom:4px;">Partial payments are fine. Any amount above what is billed is kept as account credit and applied to the next charge.</div>
+    <div id="pm-err" style="color:var(--red);font-size:12px;"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="cancelPaymentModal()">Not now</button>
+      <button class="btn btn-primary" onclick="confirmPayment('${subscriberId}')">Confirm payment</button>
+    </div>
+  `;
+  document.getElementById('modal-bg').classList.add('show');
+}
+function cancelPaymentModal(){
+  closeModal();
+  navigate('subscribers');
+}
+/* DISCOVERED DURING TESTING OF THIS CORRECTION (flagged in Report #002,
+   item 30 "known limitations"): building a date with `new Date(y,m,d)`
+   (local time) and then reading it back via `.toISOString()` silently
+   shifts the calendar date backward by one day for any browser whose local
+   clock is ahead of UTC -- which includes every Philippines-based user
+   (UTC+8). `new Date(2026,0,31).toISOString()` is "2026-01-30T16:00:00Z",
+   so `.slice(0,10)` wrongly returns "2026-01-30". This bug already existed
+   in the original addOneMonth(). Fixed here by formatting the LOCAL
+   calendar date directly (getFullYear/getMonth/getDate) instead of ever
+   converting through toISOString. */
+function fmtLocalDate(d){
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function todayLocal(){ return fmtLocalDate(new Date()); }
+
+/* HANDOFF #002 Section 13 (month-end edge cases): a recurring billing day of
+   29/30/31 doesn't exist in every month (e.g. Feb). Deterministic rule used
+   here: clamp to the LAST valid day of the target month rather than letting
+   JS's Date silently roll over into the following month (the previous
+   `d.setMonth()+1` approach had exactly that bug: Jan 31 -> Mar 3, not Feb
+   28/29). This is the "minimum-safe behavior" being reported to HQ. */
+function addOneMonth(dateStr){
+  if(!dateStr) return todayLocal();
+  const d = new Date(dateStr+'T00:00:00');
+  const day = d.getDate();
+  const targetMonthIndex = d.getMonth()+1; // 0-11, may be >11
+  const targetYear = d.getFullYear() + Math.floor(targetMonthIndex/12);
+  const mm = ((targetMonthIndex%12)+12)%12;
+  const lastDayOfTargetMonth = new Date(targetYear, mm+1, 0).getDate();
+  const useDay = Math.min(day, lastDayOfTargetMonth);
+  return fmtLocalDate(new Date(targetYear, mm, useDay));
+}
+// Clamp an arbitrary recurring billing day into a specific (year, monthIndex)
+// the same deterministic way -- used by the Calendar to generate this
+// month's obligation date from a subscriber's recurring billing day, per
+// HANDOFF #002 Section 11/13.
+function clampDayToMonth(day, year, monthIndex){
+  const lastDay = new Date(year, monthIndex+1, 0).getDate();
+  const useDay = Math.min(day, lastDay);
+  return fmtLocalDate(new Date(year, monthIndex, useDay));
+}
+let paymentInFlight = false;
+async function confirmPayment(subscriberId){
+  if(paymentInFlight) return; // blocks double-clicks creating duplicate payments/confirmations
+  paymentInFlight = true;
+  try{ await confirmPaymentInner(subscriberId); } finally { paymentInFlight = false; }
+}
+async function confirmPaymentInner(subscriberId){
+  const amount = Math.round((Number(document.getElementById('pm-amount').value)||0)*100)/100;
+  const errEl = document.getElementById('pm-err');
+  if(amount<=0){ errEl.textContent = 'Enter a valid amount'; return; }
+  const method = document.getElementById('pm-method').value;
+  const date = document.getElementById('pm-date').value || todayLocal();
+  const sub = DATA.subscribers.find(x=>x.id===subscriberId);
+  if(!sub) return;
+  if(!sub.billing || sub.billing.review){ errEl.textContent = 'Verify this subscriber\'s billing first (Subscribers → Review billing).'; return; }
+  const today = todayLocal();
+  const paymentId = 'p'+Date.now()+Math.random().toString(36).slice(2,6);
+  // Applies the cash to the oldest charges first (opening balance, then by due date, subscription before installation),
+  // keeps the component breakdown, and stores any excess as credit. The ledger is the single source of truth.
+  const r = BILL.recordPayment(sub, BILL.toC(amount), paymentId, today);
+  if(!r.ok){ errEl.textContent = r.error; return; }
+  BILL.syncLegacyFields(sub, today);
+  sub.statusSince = today;
+  // Ownership is snapshotted at payment time and never rewritten by later changes (HANDOFF #002 Sec.3).
+  DATA.payments.push({ id:paymentId, subscriberId, amount, date, method, archived:false, ownership: sub.ownership || 'unassigned',
+    allocations: r.allocations, creditAddedC: r.creditAddedC });
+  logAudit(`Recorded ${method} payment of ${peso(amount)} for ${sub.name}`);
+  const saved = await saveData();
+  closeModal();
+  navigate('subscribers');
+  // Email only after the payment is durably saved; its delivery state is stored separately and never alters the payment.
+  if(saved) sendReceiptEmail(sub, paymentId);
+}
+
+/* ============ EMAIL RECEIPTS (V1.4) ============ */
+let lastEmailStatus = null; // { ok: bool, at: Date, error?: string }
+async function sendReceiptEmail(subscriber, paymentId){
+  const payment = DATA.payments.find(p=>p.id===paymentId);
+  if(!payment) return;
+  if(payment.confirmationEmail) return; // already attempted for this payment event -- never send twice
+  let result;
+  if(!subscriber.email){
+    console.warn('No email on file for', subscriber.name, '- skipping receipt.');
+    result = { status:'skipped-no-email' };
+  } else {
+    try{
+      const res = await fetch('/api/send-receipt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: subscriber.email,
+          subscriberName: subscriber.name,
+          accountUsername: subscriber.accountUsername || '',
+          plan: subscriber.plan,
+          amount: payment.amount,
+          breakdown: (()=>{ const by={subscription:0,installation:0,opening:0}; (payment.allocations||[]).forEach(a=>{ by[a.kind]=(by[a.kind]||0)+a.c/100; }); return by; })(),
+          creditAdded: (payment.creditAddedC||0)/100,
+          remainingOutstanding: (subscriber.billing && !subscriber.billing.review) ? BILL.summary(subscriber, todayLocal()).outstandingC/100 : null,
+          date: payment.date,
+          method: payment.method || '',
+          businessName: DATA.business.name,
+          logoUrl: DATA.business.logo || ''
+        })
+      });
+      if(!res.ok){
+        const errText = await res.text();
+        lastEmailStatus = { ok:false, at:new Date(), error:errText };
+        console.error('Receipt email failed:', errText);
+        result = { status:'failed' };
+      } else {
+        lastEmailStatus = { ok:true, at:new Date() };
+        result = { status:'sent' };
+      }
+    }catch(e){
+      lastEmailStatus = { ok:false, at:new Date(), error:String(e) };
+      console.error('Receipt email request failed', e);
+      result = { status:'failed' };
+    }
+  }
+  // Independent delivery state, stored on the payment record (does not alter amount/status/ownership).
+  const live = DATA.payments.find(p=>p.id===paymentId);
+  if(live){ live.confirmationEmail = { status: result.status, at: new Date().toISOString() }; await saveData(); }
+}
+function closeModal(){ document.getElementById('modal-bg').classList.remove('show'); }
+
+/* ============ PAYMENTS ============ */
+let paySearch = '';
+let payFromDate = new Date(Date.now() - 90*24*60*60*1000).toISOString().slice(0,10);
+let payToDate = todayLocal();
+function renderPayments(){
+  const root = document.getElementById('page-root');
+  root.innerHTML = `
+    <div class="page-head"><div><h2 class="page-title">Payments</h2><p class="page-sub">${DATA.payments.length} confirmed payments (all-time)</p></div></div>
+    <div class="toolbar" style="flex-wrap:wrap;">
+      <div class="search-box"><i class="ti ti-search" aria-hidden="true"></i><input type="text" placeholder="Search by subscriber name" id="pay-search" value="${escapeHtml(paySearch)}"></div>
+      <label style="font-size:12px;color:var(--text-2);">From <input type="date" id="pay-from" value="${payFromDate}" style="padding:6px 8px;border:1px solid var(--border-strong);border-radius:var(--radius);"></label>
+      <label style="font-size:12px;color:var(--text-2);">To <input type="date" id="pay-to" value="${payToDate}" style="padding:6px 8px;border:1px solid var(--border-strong);border-radius:var(--radius);"></label>
+    </div>
+    <div class="card" style="padding:0;overflow-x:auto;">
+      <table>
+        <thead><tr><th>Subscriber</th><th>Amount</th><th>Method</th><th>Date</th></tr></thead>
+        <tbody id="pay-tbody"></tbody>
+      </table>
+    </div>
+  `;
+  document.getElementById('pay-search').addEventListener('input', e=>{ paySearch = e.target.value; renderPayTable(); });
+  document.getElementById('pay-from').addEventListener('change', e=>{ payFromDate = e.target.value; renderPayTable(); });
+  document.getElementById('pay-to').addEventListener('change', e=>{ payToDate = e.target.value; renderPayTable(); });
+  renderPayTable();
+}
+function renderPayTable(){
+  const q = paySearch.toLowerCase();
+  const rows = DATA.payments.map(p => ({...p, subName: (DATA.subscribers.find(s=>s.id===p.subscriberId)||{}).name || 'Unknown'}))
+    .filter(p => p.subName.toLowerCase().includes(q))
+    .filter(p => (!payFromDate || p.date >= payFromDate) && (!payToDate || p.date <= payToDate))
+    .sort((a,b)=> b.date.localeCompare(a.date));
+  const tbody = document.getElementById('pay-tbody');
+  if(!rows.length){ tbody.innerHTML = '<tr><td colspan="4"><div class="empty-note">No payments match this search/date range.</div></td></tr>'; return; }
+  tbody.innerHTML = rows.map(p => `
+    <tr><td>${escapeHtml(p.subName)}</td><td>${peso(p.amount)}</td><td>${escapeHtml(p.method)}</td><td>${p.date}</td></tr>
+  `).join('');
+}
+
+/* ============ REMINDERS ============ */
+let remSearch = '';
+function fillTemplate(sub){
+  return DATA.messageTemplate
+    .replace('{name}', sub.name).replace('{plan}', sub.plan).replace('{rate}', sub.rate).replace('{due}', sub.due);
+}
+/* ============ NOTICE DELIVERY PROBLEMS (HANDOFF #005 T1) ============ */
+// "Sent" means the mail server (Gmail SMTP) ACCEPTED the message. It does not prove the customer's inbox received it
+// (spam filters, full mailbox, wrong address and later bounces are invisible to SignalDesk).
+function noticePanelHtml(){
+  const list = BILL.noticeProblems(DATA, todayLocal()); if(!list.length) return '';
+  const lab = { 'will-retry':'Failed — will retry automatically', 'retries-exhausted':'Failed — automatic retries used up', 'unconfirmed':'Unconfirmed — the run ended before the result was saved', 'no-email':'No email address was on file' };
+  const typ = { pending:'Pending reminder', overdue:'Overdue warning', extReminder:'Extension reminder' };
+  return `<div class="card" style="padding:12px;margin-bottom:12px;border-left:3px solid var(--amber);">
+    <div style="font-weight:600;margin-bottom:4px;">Notices needing attention (${list.length})</div>
+    <div style="font-size:11.5px;color:var(--text-3);margin-bottom:8px;">“Sent” only means the mail server accepted the message; it cannot confirm the customer's inbox received it. An <em>unconfirmed</em> notice may already have been delivered, so retrying it can send a duplicate. Retries run on the next daily check.</div>
+    ${list.map(n=>`<div style="display:flex;gap:10px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;border-top:1px solid var(--border,#e5e7eb);padding:8px 0;font-size:12.5px;">
+      <div style="flex:1;min-width:200px;"><strong>${escapeHtml(n.name)}</strong>${n.email?'':' <span class="tag tag-amber">no email</span>'} · ${typ[n.type]||escapeHtml(n.type)}${n.dueDate?' · charge due '+n.dueDate:''}<div>${lab[n.state]||escapeHtml(n.state)} · attempts ${n.attempts}${n.manualRetries?` (+${n.manualRetries} manual)`:''}</div>${n.error?`<div style="font-size:11px;color:var(--text-3);">${escapeHtml(n.error)}</div>`:''}</div>
+      ${can('edit_subscriber')&&n.canRetry&&n.state!=='will-retry'?`<button class="btn" onclick="retryNotice('${n.subId}','${n.itemId}','${escapeHtml(n.key)}')">Retry</button>`:''}</div>`).join('')}
+    </div>`;
+}
+async function retryNotice(subId,itemId,key){
+  if(!can('edit_subscriber')) return; const s = DATA.subscribers.find(x=>x.id===subId); if(!s||!s.billing) return;
+  const m = (BILL.find(s.billing,itemId)||{}).notified; const st = m && m[key] && m[key].status;
+  const warn = (st==='unknown'||st==='claimed') ? ' The earlier attempt has no recorded result, so the customer may already have received it and could get a duplicate.' : '';
+  if(!confirm(`Queue this notice for ${s.name} to be sent again at the next daily check?${warn}`)) return;
+  const r = BILL.requeueNotice(s,itemId,key,todayLocal(),SESSION?SESSION.name:null);
+  if(!r.ok){ alert(r.error); return; }
+  logAudit(`Re-queued ${key.split(':')[0]} notice for ${s.name} (was ${st})`);
+  await saveData(); renderReminders();
+}
+function renderReminders(){
+  const root = document.getElementById('page-root');
+  root.innerHTML = `
+    <div class="page-head"><div><h2 class="page-title">Reminders</h2><p class="page-sub">Follow-up queue for pending and overdue subscribers</p></div></div>
+    ${noticePanelHtml()}
+    <div class="toolbar">
+      <div class="search-box"><i class="ti ti-search" aria-hidden="true"></i><input type="text" placeholder="Search subscribers" id="rem-search" value="${escapeHtml(remSearch)}"></div>
+    </div>
+    <div class="card" style="padding:0;overflow-x:auto;">
+      <table>
+        <thead><tr><th>Name</th><th>Due date</th><th>Status</th><th>Contact</th><th></th></tr></thead>
+        <tbody id="rem-tbody"></tbody>
+      </table>
+    </div>
+  `;
+  document.getElementById('rem-search').addEventListener('input', e=>{ remSearch = e.target.value; renderRemTable(); });
+  renderRemTable();
+}
+function renderRemTable(){
+  const q = remSearch.toLowerCase();
+  const list = DATA.subscribers.filter(s => !s.archived && !s.permanentlyDeleted && (s.status==='pending'||s.status==='overdue') && !reviewPending(s) && s.name.toLowerCase().includes(q));
+  const tbody = document.getElementById('rem-tbody');
+  if(!list.length){ tbody.innerHTML = '<tr><td colspan="5"><div class="empty-note">No follow-ups match your search.</div></td></tr>'; return; }
+  const canEdit = can('edit_subscriber');
+  tbody.innerHTML = list.map(s => `
+    <tr>
+      <td>${escapeHtml(s.name)}</td>
+      <td>${s.due}</td>
+      <td>${statusTag(s.status)}</td>
+      <td>${contactIcons(s)}</td>
+      <td style="text-align:right;"><button class="icon-btn ${canEdit?'':'disabled'}" onclick="openPaymentModal('${s.id}')" aria-label="Pay now for ${escapeHtml(s.name)}" title="Pay now"><i class="ti ti-cash" aria-hidden="true"></i></button></td>
+    </tr>
+  `).join('');
+}
+function contactIcons(s){
+  const msg = encodeURIComponent(fillTemplate(s));
+  const waNum = (s.whatsapp||'').replace(/[^\d]/g,'');
+  const waLink = waNum ? `https://wa.me/${waNum}?text=${msg}` : '';
+  const smsLink = s.phone ? `sms:${s.phone}?&body=${msg}` : '';
+  const mLink = s.messenger ? (s.messenger.startsWith('http') ? s.messenger : 'https://' + s.messenger) : '';
+  return `
+    <button class="icon-btn ic-msg ${mLink?'':'disabled'}" onclick="window.open('${mLink}','_blank')" aria-label="Message on Messenger"><i class="ti ti-brand-messenger" aria-hidden="true"></i></button>
+    <button class="icon-btn ic-sms ${smsLink?'':'disabled'}" onclick="window.location.href='${smsLink}'" aria-label="Send SMS"><i class="ti ti-message" aria-hidden="true"></i></button>
+    <button class="icon-btn ic-wa ${waLink?'':'disabled'}" onclick="window.open('${waLink}','_blank')" aria-label="Message on WhatsApp"><i class="ti ti-brand-whatsapp" aria-hidden="true"></i></button>
+  `;
+}
+
+/* ============ BROADCAST ============ */
+function renderBroadcast(){
+  const root = document.getElementById('page-root');
+  const active = DATA.subscribers.filter(s => !s.archived);
+  root.innerHTML = `
+    <div class="page-head"><div><h2 class="page-title">Broadcast</h2><p class="page-sub">General announcements to all active subscribers &mdash; outages, promos, service updates</p></div></div>
+    <div class="card" style="margin-bottom:16px;">
+      <div class="metric-label" style="margin-bottom:6px;">Announcement message</div>
+      <textarea id="bc-template" rows="3" style="width:100%;padding:10px;border:1px solid var(--border-strong);border-radius:var(--radius);" ${can('edit_settings')?'':'disabled'}>${escapeHtml(DATA.announcementTemplate || '')}</textarea>
+      <div style="font-size:11.5px;color:var(--text-3);margin-top:6px;">Placeholders: {name} {business}. This is separate from the payment-reminder template used in Reminders.</div>
+      ${can('edit_settings') ? '<button class="btn" style="margin-top:8px;" onclick="saveBroadcastTemplate()">Save message</button>' : ''}
+    </div>
+    <div class="card" style="padding:0;overflow-x:auto;">
+      <table>
+        <thead><tr><th>Recipient</th><th>Plan</th><th>Status</th><th>Send to</th></tr></thead>
+        <tbody id="bc-tbody"></tbody>
+      </table>
+    </div>
+  `;
+  document.getElementById('bc-tbody').innerHTML = active.map(s => `
+    <tr>
+      <td>${escapeHtml(s.name)}</td>
+      <td>${escapeHtml(s.plan)}</td>
+      <td>${statusTag(s.status)}</td>
+      <td>${announcementContactIcons(s)}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="4"><div class="empty-note">No active subscribers to reach.</div></td></tr>';
+}
+function fillAnnouncementTemplate(sub){
+  return (DATA.announcementTemplate || '')
+    .replace('{name}', sub.name).replace('{business}', DATA.business.name);
+}
+function announcementContactIcons(s){
+  const msg = encodeURIComponent(fillAnnouncementTemplate(s));
+  const waNum = (s.whatsapp||'').replace(/[^\d]/g,'');
+  const waLink = waNum ? `https://wa.me/${waNum}?text=${msg}` : '';
+  const smsLink = s.phone ? `sms:${s.phone}?&body=${msg}` : '';
+  const mLink = s.messenger ? (s.messenger.startsWith('http') ? s.messenger : 'https://' + s.messenger) : '';
+  return `
+    <button class="icon-btn ic-msg ${mLink?'':'disabled'}" onclick="window.open('${mLink}','_blank')" aria-label="Message on Messenger"><i class="ti ti-brand-messenger" aria-hidden="true"></i></button>
+    <button class="icon-btn ic-sms ${smsLink?'':'disabled'}" onclick="window.location.href='${smsLink}'" aria-label="Send SMS"><i class="ti ti-message" aria-hidden="true"></i></button>
+    <button class="icon-btn ic-wa ${waLink?'':'disabled'}" onclick="window.open('${waLink}','_blank')" aria-label="Message on WhatsApp"><i class="ti ti-brand-whatsapp" aria-hidden="true"></i></button>
+  `;
+}
+async function saveBroadcastTemplate(){
+  DATA.announcementTemplate = document.getElementById('bc-template').value;
+  logAudit('Updated the broadcast announcement template');
+  await saveData();
+  navigate('broadcast');
+}
+
+/* ============ CALENDAR (HANDOFF #002 Sections 10-13: recurring monthly
+   collection view, not a literal historical due-date calendar) ============
+   For each active subscriber, this month's obligation date is derived from
+   their recurring billing day (billingDayOf = day-of-month of `due`),
+   clamped into whichever month/year is being viewed -- so a subscriber
+   with billing day 15 appears every month, regardless of what year their
+   stored `due` happens to be in (Section 10/11, Test A/B/S).
+
+   Resolving that date's status against the subscriber's actual `due`
+   pointer (the authoritative "current outstanding cycle" marker that
+   confirmPayment()/the daily cron advance):
+     - same month as `due`, status pending/overdue(legacy)/extended ->
+       actionable this cycle (PENDING / DISCONNECTION WARNING / EXTENDED)
+     - this month's obligation date is BEFORE `due` -> already resolved
+       and paid (due already advanced past it) -> hidden (Section 12:
+       "removed from default outstanding Calendar", history untouched)
+     - otherwise (this month is `due`'s month while paid, or a future
+       month) -> upcoming, not yet due -> DUE */
+let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
+function renderCalendar(){
+  const root = document.getElementById('page-root');
+  root.innerHTML = `
+    <div class="page-head"><div><h2 class="page-title">Calendar</h2><p class="page-sub">Monthly collection view — which subscribers still need action this month</p></div></div>
+    <div class="card">
+      <div class="cal-head">
+        <button class="icon-btn" onclick="calShift(-1)" aria-label="Previous month"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>
+        <div style="font-weight:600;" id="cal-label"></div>
+        <button class="icon-btn" onclick="calShift(1)" aria-label="Next month"><i class="ti ti-chevron-right" aria-hidden="true"></i></button>
+      </div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--text-2);margin:2px 0 12px;">
+        <span><span class="tag tag-blue" style="padding:1px 6px;">Due</span> upcoming, not yet due</span>
+        <span><span class="tag tag-amber" style="padding:1px 6px;">Pending</span> unpaid past due date</span>
+        <span><span class="tag tag-gray" style="padding:1px 6px;background:#e4d6fb;color:#5c2d9e;">Extended</span> manual extension active</span>
+        <span><span class="tag tag-red" style="padding:1px 6px;">Overdue</span> 5+ days unpaid</span>
+      </div>
+      <div class="cal-grid" id="cal-dow"></div>
+      <div class="cal-grid" id="cal-cells" style="margin-top:6px;"></div>
+    </div>
+  `;
+  drawCalendar();
+}
+function calShift(delta){
+  calMonth += delta;
+  if(calMonth<0){calMonth=11;calYear--;}
+  if(calMonth>11){calMonth=0;calYear++;}
+  drawCalendar();
+}
+function daysBetweenDates(fromStr, toStr){
+  const a = new Date(fromStr+'T00:00:00');
+  const b = new Date(toStr+'T00:00:00');
+  return Math.floor((b-a)/(1000*60*60*24));
+}
+// Shared with the Dashboard/Reminders so every view agrees on what a
+// subscriber's calendar entry for a given month looks like.
+function calendarEntriesFor(s, year, monthIndex){
+  // HANDOFF #004 Sec.11: built from the billing ledger. Shows generated unpaid charges for the month (with the
+  // subscription/installation breakdown) plus the scheduled next billing date; paid/resolved charges disappear from this
+  // outstanding view (payment history is untouched). Unverified (review) subscribers are not shown.
+  if(s.archived || s.permanentlyDeleted || s.status==='disconnected' || !s.billing || s.billing.review) return [];
+  const b = s.billing, today = todayLocal();
+  const mm = String(monthIndex+1).padStart(2,'0');
+  const from = year+'-'+mm+'-01', to = year+'-'+mm+'-'+String(new Date(year,monthIndex+1,0).getDate()).padStart(2,'0');
+  const byDate = {};
+  b.obligations.forEach(it=>{ if(!it.dueDate || it.dueDate<from || it.dueDate>to || BILL.remC(it)<=0 || it.rateReview) return; (byDate[it.dueDate]=byDate[it.dueDate]||[]).push(it); });
+  const labels = { current:['DUE','due'], due:['DUE','due'], pending:['PENDING','pending'], overdue:['OVERDUE','warning'], extended:['EXTENDED','extended'] };
+  const out = [];
+  Object.keys(byDate).sort().forEach(d=>{
+    const items = byDate[d], sub = items.find(i=>i.kind==='subscription'), inst = items.find(i=>i.kind==='installation');
+    const totalC = items.reduce((a,i)=>a+BILL.remC(i),0);
+    const st = sub ? BILL.subStatus(sub, today) : 'current';
+    const [label,cls] = sub ? (labels[st]||['DUE','due']) : ['INSTALLATION','due'];
+    const parts = []; if(sub) parts.push('subscription '+peso(BILL.fromC(BILL.remC(sub)))); if(inst) parts.push('installation '+peso(BILL.fromC(BILL.remC(inst))));
+    const ext = sub && sub.ext && !sub.ext.resolution ? ' · extended until '+sub.ext.until : '';
+    out.push({ label, cls, date:d, amountC:totalC, note: peso(BILL.fromC(totalC))+' ('+parts.join(' + ')+')'+ext });
+  });
+  if(!out.length && b.billingDay && b.firstDue && !BILL.find(b,'sub:'+from.slice(0,7))){
+    const d = BILL.nextDueOnOrAfter(b.billingDay, from);
+    const resume = b.resumeFrom || b.firstDue;
+    if(d<=to && d>today && d>=b.firstDue && d>=resume){ out.push({ label:'DUE', cls:'due', date:d, amountC:BILL.toC(s.rate), note:peso(s.rate)+' scheduled (not billed yet)' }); }
+  }
+  return out;
+}
+function drawCalendar(){
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('cal-label').textContent = `${monthNames[calMonth]} ${calYear}`;
+  document.getElementById('cal-dow').innerHTML = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const entriesByDay = {};
+  DATA.subscribers.forEach(s=>{
+    calendarEntriesFor(s, calYear, calMonth).forEach(entry=>{
+      const day = Number(entry.date.slice(8,10));
+      entriesByDay[day] = entriesByDay[day]||[];
+      entriesByDay[day].push({ name:s.name, ...entry });
+    });
+  });
+  const clsTag = { due:'tag-blue', pending:'tag-amber', extended:'tag-gray', warning:'tag-red' };
+  const clsDue = { due:'cal-due', pending:'cal-due', extended:'cal-due', warning:'cal-due' };
+  let html = '';
+  for(let i=0;i<firstDay;i++) html += '<div class="cal-cell empty"></div>';
+  for(let day=1; day<=daysInMonth; day++){
+    const entries = entriesByDay[day]||[];
+    html += `<div class="cal-cell"><div class="cal-date">${day}</div>${entries.slice(0,2).map(e=>`<div class="${clsDue[e.cls]}" title="${escapeHtml(e.name)} — ${e.label}${e.note?(' ('+escapeHtml(e.note)+')'):''}" style="${e.cls==='pending'?'':(e.cls==='warning'?'background:var(--red-bg);color:var(--red);':(e.cls==='extended'?'background:#e4d6fb;color:#5c2d9e;':'background:var(--accent-bg);color:var(--accent-dark);'))}">${escapeHtml(e.name)} · ${peso(BILL.fromC(e.amountC))}</div>`).join('')}${entries.length>2?`<div style="font-size:10px;color:var(--text-3);">+${entries.length-2} more</div>`:''}</div>`;
+  }
+  document.getElementById('cal-cells').innerHTML = html;
+}
+
+/* ============ EXPENSES ============ */
+let expFromDate = new Date(Date.now() - 90*24*60*60*1000).toISOString().slice(0,10);
+let expToDate = todayLocal();
+function renderExpenses(){
+  const root = document.getElementById('page-root');
+  const filtered = () => DATA.expenses.filter(e => (!expFromDate || e.date >= expFromDate) && (!expToDate || e.date <= expToDate));
+  const total = filtered().filter(e=>!e.voided).reduce((s,e)=>s+e.amount,0);
+  root.innerHTML = `
+    <div class="page-head">
+      <div><h2 class="page-title">Expenses</h2><p class="page-sub">Operating cost record keeping</p></div>
+      ${can('edit_expense') ? '<button class="btn btn-primary" onclick="openExpenseModal()"><i class="ti ti-plus" aria-hidden="true"></i> Add expense</button>' : ''}
+    </div>
+    <div class="grid-4" style="margin-bottom:16px;">
+      <div class="card"><div class="metric-label">Total in selected range</div><div class="metric-val">${peso(total)}</div></div>
+    </div>
+    <div class="toolbar" style="flex-wrap:wrap;margin-bottom:14px;">
+      <label style="font-size:12px;color:var(--text-2);">From <input type="date" id="exp-from" value="${expFromDate}" style="padding:6px 8px;border:1px solid var(--border-strong);border-radius:var(--radius);"></label>
+      <label style="font-size:12px;color:var(--text-2);">To <input type="date" id="exp-to" value="${expToDate}" style="padding:6px 8px;border:1px solid var(--border-strong);border-radius:var(--radius);"></label>
+    </div>
+    <div class="card" style="padding:0;overflow-x:auto;">
+      <table>
+        <thead><tr><th>Description</th><th>Category</th><th>Amount</th><th>Allocation</th><th>Date</th><th></th></tr></thead>
+        <tbody id="exp-tbody"></tbody>
+      </table>
+    </div>
+  `;
+  document.getElementById('exp-from').addEventListener('change', e=>{ expFromDate = e.target.value; renderExpenses(); });
+  document.getElementById('exp-to').addEventListener('change', e=>{ expToDate = e.target.value; renderExpenses(); });
+  document.getElementById('exp-tbody').innerHTML = filtered().sort((a,b)=>b.date.localeCompare(a.date)).map(e => `
+    <tr${e.voided?' style="opacity:.55;"':''}>
+      <td>${e.voided?'<span class="tag tag-gray" title="'+escapeHtml((e.voided.reason||'')+' ('+(e.voided.by||'')+', '+(e.voided.at||'').slice(0,10)+')')+'">Void</span> ':''}<span${e.voided?' style="text-decoration:line-through;"':''}>${escapeHtml(e.description)}</span></td>
+      <td>${escapeHtml(e.category)}</td>
+      <td${e.voided?' style="text-decoration:line-through;"':''}>${peso(e.amount)}</td>
+      <td>${e.allocation ? (e.allocationType==='own'?'<span class="tag tag-green">Own only</span>':(e.allocationType==='investor'?'<span class="tag tag-blue">Investor only</span>':'<span class="tag tag-gray">Shared 50/50</span>')) : '<span class="tag tag-amber">Legacy (unclassified)</span>'}</td>
+      <td>${e.date}</td>
+      <td style="text-align:right;">${can('edit_expense') && !e.voided ? `<button class="icon-btn" onclick="voidExpense('${e.id}')" aria-label="Void expense" title="Void (keeps the record, removes it from totals)"><i class="ti ti-ban" aria-hidden="true"></i></button>` : ''}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="6"><div class="empty-note">No expenses logged yet.</div></td></tr>';
+}
+function openExpenseModal(){
+  if(!can('edit_expense')) return;
+  const body = document.getElementById('modal-body');
+  body.innerHTML = `
+    <h3>Add expense</h3>
+    <div class="field"><label>Description</label><input id="ex-desc"></div>
+    <div class="field"><label>Category</label>
+      <select id="ex-cat"><option>Bandwidth</option><option>Equipment</option><option>Operations</option><option>Salaries</option><option>Other</option></select>
+    </div>
+    <div class="field"><label>Amount (PHP)</label><input id="ex-amount" type="number"></div>
+    <div class="field"><label>Date</label><input id="ex-date" type="date" value="${todayLocal()}"></div>
+    <div class="field"><label>Own / Investor allocation</label>
+      <select id="ex-allocation">
+        <option value="shared" selected>Shared — 50% Own / 50% Investor</option>
+        <option value="own">Own only</option>
+        <option value="investor">Investor only</option>
+      </select>
+      <div style="font-size:11px;color:var(--text-3);margin-top:4px;">Locked in at the moment this expense is recorded — changing the rule later never rewrites this record (HQ Section 6).</div>
+    </div>
+    <div id="ex-err" style="color:var(--red);font-size:12px;"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveExpense()">Add expense</button>
+    </div>
+  `;
+  document.getElementById('modal-bg').classList.add('show');
+}
+async function saveExpense(){
+  const desc = document.getElementById('ex-desc').value.trim();
+  const amount = Number(document.getElementById('ex-amount').value);
+  if(!desc){ document.getElementById('ex-err').textContent = 'Enter a description first'; return; }
+  if(!amount || amount<=0){ document.getElementById('ex-err').textContent = 'Enter a valid amount'; return; }
+  const allocationType = document.getElementById('ex-allocation').value;
+  const allocation = allocationType === 'own' ? { own:amount, investor:0 }
+    : allocationType === 'investor' ? { own:0, investor:amount }
+    : { own: amount/2, investor: amount/2 };
+  DATA.expenses.push({ id:'e'+Date.now(), description:desc, category:document.getElementById('ex-cat').value, amount, date:document.getElementById('ex-date').value, allocationType, allocation });
+  await saveData();
+  closeModal();
+  navigate('expenses');
+}
+/* HANDOFF #009 (Audit Phase A): expenses are never erased. "Void" marks the record (who/when/why) and removes it from totals;
+   the database refuses to let staff remove or edit an existing expense. */
+function liveExpenses(){ return (DATA.expenses||[]).filter(e=>!e.voided); }
+async function voidExpense(id){
+  if(!can('edit_expense')) return;
+  const e = (DATA.expenses||[]).find(x=>x.id===id);
+  if(!e || e.voided) return;
+  if(!confirm('Void this expense? The record stays (marked void, excluded from totals) so the history is preserved.')) return;
+  e.voided = { at:new Date().toISOString(), by: SESSION ? SESSION.name : 'System', reason:'Voided from Expenses page' };
+  logAudit('Voided expense "'+e.description+'" ('+peso(e.amount)+')');
+  await saveData();
+  navigate('expenses');
+}
+
+/* ============ TRANSACTIONS ============ */
+let txPeriod = 'monthly';
+function renderTransactions(){
+  const root = document.getElementById('page-root');
+  const txs = [
+    ...DATA.payments.map(p=>({ type:'payment', desc:(DATA.subscribers.find(s=>s.id===p.subscriberId)||{}).name||'Unknown', amount:p.amount, date:p.date })),
+    ...liveExpenses().map(e=>({ type:'expense', desc:e.description, amount:-e.amount, date:e.date }))
+  ].sort((a,b)=> b.date.localeCompare(a.date));
+  root.innerHTML = `
+    <div class="page-head"><div><h2 class="page-title">Transactions</h2><p class="page-sub">Combined payments and expenses log</p></div></div>
+    <div class="period-toggle" id="tx-period" style="margin-bottom:14px;width:fit-content;">
+      <button data-p="monthly" class="${txPeriod==='monthly'?'active':''}">Monthly</button>
+      <button data-p="yearly" class="${txPeriod==='yearly'?'active':''}">Yearly</button>
+    </div>
+    <div class="card" style="padding:0;overflow-x:auto;">
+      <table>
+        <thead><tr><th>Date</th><th>Type</th><th>Description</th><th>Amount</th></tr></thead>
+        <tbody>
+          ${txs.map(t=>`
+            <tr>
+              <td>${t.date}</td>
+              <td>${t.type==='payment' ? '<span class="tag tag-green">Payment</span>' : '<span class="tag tag-red">Expense</span>'}</td>
+              <td>${escapeHtml(t.desc)}</td>
+              <td style="color:${t.amount<0?'var(--red)':'var(--green)'}">${t.amount<0?'-':''}${peso(Math.abs(t.amount))}</td>
+            </tr>
+          `).join('') || '<tr><td colspan="4"><div class="empty-note">No transactions recorded yet.</div></td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  `;
+  document.getElementById('tx-period').querySelectorAll('button').forEach(b=>{
+    b.addEventListener('click', ()=>{ txPeriod=b.dataset.p; renderTransactions(); });
+  });
+}
+
+/* ============ SETTINGS ============ */
+async function renderSettings(){
+  const root = document.getElementById('page-root');
+  const isAdmin = SESSION.role === 'admin';
+  const emailTag = lastEmailStatus
+    ? (lastEmailStatus.ok ? `<span class="tag tag-green">Last receipt sent ${timeAgo(lastEmailStatus.at)}</span>` : `<span class="tag tag-red">Last receipt failed ${timeAgo(lastEmailStatus.at)}</span>`)
+    : `<span class="tag tag-gray">No receipts sent this session</span>`;
+  const sheetsTag = lastSheetsSyncStatus
+    ? (lastSheetsSyncStatus.ok ? `<span class="tag tag-green">Last synced ${timeAgo(lastSheetsSyncStatus.at)}</span>` : `<span class="tag tag-red">Last sync failed ${timeAgo(lastSheetsSyncStatus.at)}</span>`)
+    : `<span class="tag tag-gray">Not synced this session</span>`;
+  root.innerHTML = `
+    <div class="page-head"><div><h2 class="page-title">Settings</h2><p class="page-sub">Business profile, plans, accounts, and system status</p></div></div>
+    ${!isAdmin ? '<div class="perm-note">You have view-only access to settings. Sign in as an admin to make changes.</div>' : ''}
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="metric-label" style="margin-bottom:10px;">Business profile</div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div class="brand-logo" style="width:48px;height:48px;">${DATA.business.logo ? '<img src="'+DATA.business.logo+'">' : DATA.business.name.slice(0,2).toUpperCase()}</div>
+        <div>
+          <div style="font-weight:600;font-size:15px;">${escapeHtml(DATA.business.name)}</div>
+          <div style="font-size:11.5px;color:var(--text-3);margin-top:2px;">Name and logo are fixed and can't be edited from here.</div>
+        </div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+          <label style="font-size:12px;color:var(--text-2);">Accent color</label>
+          <input type="color" id="set-accent" value="${DATA.business.accentColor || '#2a6dd9'}" ${isAdmin?'':'disabled'} style="width:38px;height:32px;border:1px solid var(--border-strong);border-radius:6px;padding:2px;">
+          ${isAdmin ? '<button class="btn" onclick="saveAccentColor()">Save</button>' : ''}
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="metric-label" style="margin-bottom:10px;">Payment information (GCash)</div>
+      <p style="font-size:12px;color:var(--text-2);margin:0 0 12px;">Configure this once — it's automatically included in Pending Reminder, Extension Reminder and Disconnection Warning emails. Stored the same way the business logo already is (no new storage service introduced).</p>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;">
+        <div>
+          <div style="width:120px;height:120px;border:1px dashed var(--border-strong);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;overflow:hidden;background:#fff;">
+            ${DATA.business.paymentInfo?.gcashQrUrl ? `<img src="${DATA.business.paymentInfo.gcashQrUrl}" style="width:100%;height:100%;object-fit:contain;">` : '<span style="font-size:11px;color:var(--text-3);">No QR set</span>'}
+          </div>
+          ${isAdmin ? `<label class="btn" style="display:block;text-align:center;margin-top:8px;font-size:11.5px;padding:6px;">Upload QR<input type="file" id="set-gcash-qr-file" accept="image/*" style="display:none;" onchange="handleGcashQrUpload(event)"></label>
+          ${DATA.business.paymentInfo?.gcashQrUrl ? '<button class="btn" style="width:100%;margin-top:4px;font-size:11.5px;padding:6px;" onclick="clearGcashQr()">Remove</button>' : ''}` : ''}
+        </div>
+        <div style="flex:1;min-width:220px;">
+          <div class="field"><label>GCash account name</label><input id="set-gcash-name" value="${escapeHtml(DATA.business.paymentInfo?.gcashName||'')}" ${isAdmin?'':'disabled'}></div>
+          <div class="field"><label>GCash number</label><input id="set-gcash-number" value="${escapeHtml(DATA.business.paymentInfo?.gcashNumber||'')}" ${isAdmin?'':'disabled'}></div>
+          <div class="field"><label>Payment instructions</label><textarea id="set-gcash-instructions" rows="2" style="width:100%;padding:9px 10px;border:1px solid var(--border-strong);border-radius:var(--radius);" ${isAdmin?'':'disabled'}>${escapeHtml(DATA.business.paymentInfo?.instructions||'')}</textarea></div>
+          ${isAdmin ? '<button class="btn btn-primary" onclick="savePaymentInfo()">Save payment information</button>' : ''}
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="metric-label" style="margin-bottom:10px;">Installation fee</div>
+      <div class="field" style="max-width:220px;"><label>Default installation fee (PHP)</label><input id="set-install-fee" type="number" min="0" step="0.01" value="${DATA.business.installationFeeDefault==null?1500:DATA.business.installationFeeDefault}" ${isAdmin?'':'disabled'}></div>
+      <div style="font-size:11.5px;color:var(--text-3);margin-bottom:8px;">Pre-fills new subscriber registration only. Each subscriber's agreement keeps its own saved amount and schedule, so changing this never alters existing agreements.</div>
+      ${isAdmin ? '<button class="btn btn-primary" onclick="saveInstallationDefault()">Save installation fee</button>' : ''}
+    </div>
+    <div class="card" style="margin-bottom:16px;">
+      <div class="metric-label" style="margin-bottom:10px;">Reports &amp; notifications — Investor</div>
+      <div class="field"><label>Investor email address</label><input id="set-investor-email" type="email" value="${escapeHtml(DATA.investorReport?.email||'')}" ${isAdmin?'':'disabled'}></div>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-2);margin:8px 0;">
+        <input type="checkbox" id="set-investor-enabled" ${DATA.investorReport?.enabled?'checked':''} ${isAdmin?'':'disabled'}> Send a monthly Investor Report email automatically
+      </label>
+      <div class="field" style="max-width:160px;"><label>Send on day of month</label><input id="set-investor-day" type="number" min="1" max="28" value="${DATA.investorReport?.sendOnDay||1}" ${isAdmin?'':'disabled'}></div>
+      <div style="font-size:11.5px;color:var(--text-3);margin:4px 0 10px;">${DATA.investorReport?.lastSentAt ? ('Last sent: '+DATA.investorReport.lastSentAt+(DATA.investorReport.lastSentPeriod?(' for '+DATA.investorReport.lastSentPeriod):'')) : 'Not sent yet.'} Uses the same calculation as the Own/Investor/Overall dashboard above and the Google Sheets Investor Report tab.</div>
+      ${isAdmin ? '<button class="btn btn-primary" onclick="saveInvestorReportSettings()">Save report settings</button>' : ''}
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="metric-label" style="margin-bottom:10px;">System status</div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;font-size:13px;">
+        <div>Email receipts: ${emailTag}</div>
+        <div>Google Sheets backup: ${sheetsTag} <button class="btn" style="padding:4px 10px;font-size:11.5px;margin-left:6px;" onclick="manualSyncSheets()" id="manual-sync-btn"><i class="ti ti-refresh" aria-hidden="true"></i> Sync now</button></div>
+      </div>
+      ${lastSheetsSyncStatus && !lastSheetsSyncStatus.ok ? `<div style="margin-top:8px;font-size:11.5px;color:var(--red);">${escapeHtml(lastSheetsSyncStatus.error || 'Unknown error')}</div>` : ''}
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="metric-label" style="margin-bottom:6px;">Security</div>
+      <p style="font-size:12.5px;color:var(--text-2);margin:0 0 10px;">Add a passkey (Face ID, Touch ID, Windows Hello, or a security key) so you can sign in on this device without typing a password. This is a beta feature — if it doesn't work, your Supabase project may not have Passkeys enabled yet under Authentication &gt; Passkeys.</p>
+      <button class="btn" onclick="registerPasskey()"><i class="ti ti-fingerprint" aria-hidden="true"></i> Register a passkey on this device</button>
+      <div id="passkey-msg" style="font-size:12px;margin-top:8px;"></div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="metric-label" style="margin-bottom:10px;">Plans &amp; rates</div>
+      <table>
+        <thead><tr><th>Plan name</th><th>Monthly rate</th><th></th></tr></thead>
+        <tbody>
+          ${(DATA.plans||[]).map((p,i)=>`
+            <tr>
+              <td>${escapeHtml(p.name)}</td>
+              <td>${peso(p.rate)}</td>
+              <td style="text-align:right;">${isAdmin ? `<button class="icon-btn" onclick="deletePlan(${i})" aria-label="Remove plan"><i class="ti ti-trash" aria-hidden="true"></i></button>` : ''}</td>
+            </tr>
+          `).join('') || '<tr><td colspan="3"><div class="empty-note">No plans configured.</div></td></tr>'}
+        </tbody>
+      </table>
+      ${isAdmin ? '<button class="btn" style="margin-top:10px;" onclick="openPlanModal()"><i class="ti ti-plus" aria-hidden="true"></i> Add plan</button>' : ''}
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="metric-label" style="margin-bottom:10px;">Export data</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn" onclick="exportCSV('subscribers')"><i class="ti ti-download" aria-hidden="true"></i> Subscribers CSV</button>
+        <button class="btn" onclick="exportCSV('payments')"><i class="ti ti-download" aria-hidden="true"></i> Payments CSV</button>
+        <button class="btn" onclick="exportCSV('expenses')"><i class="ti ti-download" aria-hidden="true"></i> Expenses CSV</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="metric-label" style="margin-bottom:10px;">Accounts and permissions</div>
+      <table>
+        <thead><tr><th>Name</th><th>Role</th><th></th></tr></thead>
+        <tbody id="accounts-tbody"><tr><td colspan="3"><div class="empty-note">Loading accounts…</div></td></tr></tbody>
+      </table>
+      ${isAdmin ? '<button class="btn" style="margin-top:10px;" onclick="openAccountModal()"><i class="ti ti-plus" aria-hidden="true"></i> Add account</button>' : ''}
+    </div>
+
+    <div class="card">
+      <div class="metric-label" style="margin-bottom:10px;">Audit log</div>
+      <div style="max-height:280px;overflow-y:auto;">
+        ${(DATA.auditLog||[]).slice(0,50).map(a=>`
+          <div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px;">
+            <div>${escapeHtml(a.text)}</div>
+            <div style="color:var(--text-3);font-size:11px;margin-top:2px;">${escapeHtml(a.by)} &middot; ${timeAgo(new Date(a.at))}</div>
+          </div>
+        `).join('') || '<div class="empty-note">No activity recorded yet.</div>'}
+      </div>
+    </div>
+  `;
+  await renderAccountsTable();
+}
+
+function timeAgo(date){
+  const secs = Math.floor((Date.now() - date.getTime())/1000);
+  if(secs < 60) return 'just now';
+  const mins = Math.floor(secs/60);
+  if(mins < 60) return mins+'m ago';
+  const hrs = Math.floor(mins/60);
+  if(hrs < 24) return hrs+'h ago';
+  return Math.floor(hrs/24)+'d ago';
+}
+
+function handleGcashQrUpload(event){
+  const file = event.target.files && event.target.files[0];
+  if(!file) return;
+  if(file.size > 1.5*1024*1024){ alert('Please use an image under 1.5MB.'); return; }
+  const reader = new FileReader();
+  reader.onload = async ()=>{
+    DATA.business.paymentInfo = DATA.business.paymentInfo || {};
+    DATA.business.paymentInfo.gcashQrUrl = reader.result; // data: URI, same pattern as business.logo
+    logAudit('Uploaded a GCash QR code');
+    await saveData();
+    navigate('settings');
+  };
+  reader.readAsDataURL(file);
+}
+async function clearGcashQr(){
+  if(!confirm('Remove the configured GCash QR code?')) return;
+  DATA.business.paymentInfo.gcashQrUrl = '';
+  logAudit('Removed the GCash QR code');
+  await saveData();
+  navigate('settings');
+}
+async function savePaymentInfo(){
+  DATA.business.paymentInfo = DATA.business.paymentInfo || {};
+  DATA.business.paymentInfo.gcashName = document.getElementById('set-gcash-name').value.trim();
+  DATA.business.paymentInfo.gcashNumber = document.getElementById('set-gcash-number').value.trim();
+  DATA.business.paymentInfo.instructions = document.getElementById('set-gcash-instructions').value.trim();
+  logAudit('Updated payment information');
+  await saveData();
+  navigate('settings');
+}
+async function saveInstallationDefault(){
+  if(SESSION.role !== 'admin') return;
+  const v = Math.round((Number(document.getElementById('set-install-fee').value)||0)*100)/100;
+  if(v<0){ alert('Enter a fee of zero or more'); return; }
+  DATA.business.installationFeeDefault = v;
+  logAudit('Changed the default installation fee');
+  await saveData();
+  navigate('settings');
+}
+async function saveInvestorReportSettings(){
+  DATA.investorReport = DATA.investorReport || {};
+  DATA.investorReport.email = document.getElementById('set-investor-email').value.trim();
+  DATA.investorReport.enabled = document.getElementById('set-investor-enabled').checked;
+  DATA.investorReport.sendOnDay = Math.min(28, Math.max(1, Number(document.getElementById('set-investor-day').value)||1));
+  logAudit('Updated Investor Report settings');
+  await saveData();
+  navigate('settings');
+}
+async function saveAccentColor(){
+  DATA.business.accentColor = document.getElementById('set-accent').value;
+  applyAccentColor();
+  logAudit('Changed the accent color');
+  await saveData();
+  navigate('settings');
+}
+
+function openPlanModal(){
+  const body = document.getElementById('modal-body');
+  body.innerHTML = `
+    <h3>Add plan</h3>
+    <div class="field"><label>Plan name</label><input id="pl-name" placeholder="e.g. 200 Mbps"></div>
+    <div class="field"><label>Monthly rate (PHP)</label><input id="pl-rate" type="number"></div>
+    <div id="pl-err" style="color:var(--red);font-size:12px;"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="savePlan()">Add plan</button>
+    </div>
+  `;
+  document.getElementById('modal-bg').classList.add('show');
+}
+async function savePlan(){
+  const name = document.getElementById('pl-name').value.trim();
+  const rate = Number(document.getElementById('pl-rate').value);
+  const errEl = document.getElementById('pl-err');
+  if(!name){ errEl.textContent = 'Enter a plan name first'; return; }
+  if(!rate || rate<=0){ errEl.textContent = 'Enter a valid rate'; return; }
+  DATA.plans = DATA.plans || [];
+  DATA.plans.push({ name, rate });
+  logAudit(`Added plan ${name} (${peso(rate)}/mo)`);
+  await saveData();
+  closeModal();
+  navigate('settings');
+}
+async function deletePlan(index){
+  const plan = DATA.plans[index];
+  if(!confirm(`Remove the "${plan.name}" plan? Existing subscribers on this plan keep their current rate.`)) return;
+  DATA.plans.splice(index,1);
+  logAudit(`Removed plan ${plan.name}`);
+  await saveData();
+  navigate('settings');
+}
+
+function exportCSV(type){
+  const rows = { subscribers: [], payments: [], expenses: [] };
+  if(type === 'subscribers'){
+    rows.subscribers.push(['Name','Address','Email','Phone','WhatsApp','Facebook','Messenger','Plan','Rate','Due Date','Status','Archived']);
+    DATA.subscribers.filter(s=>!s.permanentlyDeleted).forEach(s=> rows.subscribers.push([s.name,s.address,s.email,s.phone,s.whatsapp,s.fb,s.messenger,s.plan,s.rate,s.due,s.status, s.archived?'Yes':'No']));
+  } else if(type === 'payments'){
+    rows.payments.push(['Date','Subscriber','Amount','Method']);
+    DATA.payments.forEach(p=> rows.payments.push([p.date, (DATA.subscribers.find(s=>s.id===p.subscriberId)||{}).name||'Unknown', p.amount, p.method]));
+  } else if(type === 'expenses'){
+    rows.expenses.push(['Date','Description','Category','Amount']);
+    liveExpenses().forEach(e=> rows.expenses.push([e.date, e.description, e.category, e.amount]));
+  }
+  const csvRows = rows[type];
+  const csv = csvRows.map(r => r.map(cell => {
+    const s = String(cell ?? '');
+    return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+  }).join(',')).join('\n');
+  const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `signaldesk-${type}-${todayLocal()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  logAudit(`Exported ${type} as CSV`);
+}
+
+async function renderAccountsTable(){
+  const tbody = document.getElementById('accounts-tbody');
+  if(!tbody) return;
+  const isAdmin = SESSION.role === 'admin';
+  const { data: profiles, error } = await sb.from('profiles').select('id, name, role').order('created_at', { ascending: true });
+  if(error || !profiles){
+    tbody.innerHTML = '<tr><td colspan="3"><div class="empty-note">Could not load accounts.</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = profiles.map(p => `
+    <tr>
+      <td>${escapeHtml(p.name)}${p.id === SESSION.userId ? ' <span class="tag tag-gray">You</span>' : ''}</td>
+      <td style="text-transform:capitalize;">${escapeHtml(p.role)}</td>
+      <td style="text-align:right;">${isAdmin && p.id !== SESSION.userId ? `<button class="icon-btn" onclick="deleteAccount('${p.id}')" aria-label="Remove account"><i class="ti ti-trash" aria-hidden="true"></i></button>` : ''}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="3"><div class="empty-note">No accounts found.</div></td></tr>';
+}
+function openAccountModal(){
+  const body = document.getElementById('modal-body');
+  body.innerHTML = `
+    <h3>Add account</h3>
+    <div class="field"><label>Full name</label><input id="ac-name"></div>
+    <div class="field"><label>Email</label><input id="ac-email" type="email" placeholder="staff@example.com"></div>
+    <div class="field"><label>Temporary password</label><input id="ac-password" type="password" placeholder="At least 6 characters"></div>
+    <div class="field"><label>Role</label>
+      <select id="ac-role"><option value="user">User &mdash; limited access</option><option value="guest">Guest &mdash; view only</option><option value="admin">Admin &mdash; full access</option></select>
+    </div>
+    <div id="ac-err" style="color:var(--red);font-size:12px;"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="ac-save-btn" onclick="saveAccount()">Add account</button>
+    </div>
+  `;
+  document.getElementById('modal-bg').classList.add('show');
+}
+async function saveAccount(){
+  const name = document.getElementById('ac-name').value.trim();
+  const email = document.getElementById('ac-email').value.trim();
+  const password = document.getElementById('ac-password').value;
+  const role = document.getElementById('ac-role').value;
+  const errEl = document.getElementById('ac-err');
+  if(!name || !email || !password){ errEl.textContent = 'Fill in every field first'; return; }
+  if(password.length < 6){ errEl.textContent = 'Password must be at least 6 characters'; return; }
+  const btn = document.getElementById('ac-save-btn');
+  btn.disabled = true;
+  btn.textContent = 'Adding…';
+  try{
+    const res = await fetch('/api/manage-accounts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'create', accessToken: SESSION.accessToken, email, password, name, role })
+    });
+    const result = await res.json();
+    if(!res.ok){
+      errEl.textContent = result.error || 'Could not create account';
+      btn.disabled = false;
+      btn.textContent = 'Add account';
+      return;
+    }
+    closeModal();
+    navigate('settings');
+  }catch(e){
+    errEl.textContent = 'Network error — please try again';
+    btn.disabled = false;
+    btn.textContent = 'Add account';
+  }
+}
+async function deleteAccount(userId){
+  if(userId === SESSION.userId) return;
+  if(!confirm('Remove this account? This cannot be undone.')) return;
+  try{
+    const res = await fetch('/api/manage-accounts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', accessToken: SESSION.accessToken, targetUserId: userId })
+    });
+    if(!res.ok){
+      const result = await res.json();
+      alert(result.error || 'Could not remove account');
+      return;
+    }
+    await renderAccountsTable();
+  }catch(e){
+    alert('Network error — please try again');
+  }
+}
+
+/* ============ INIT ============ */
+(async function init(){
+  await loadData();
+  renderLoginBrand();
+  if(SUPABASE_READY){
+    const { data: { session } } = await sb.auth.getSession();
+    if(session){
+      await establishSession(session);
+    }
+  }
+})();
+
+/* ============ PWA: register service worker ============ */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('service-worker.js').catch(e=>{
+      console.warn('Service worker registration failed (app still works normally):', e);
+    });
+  });
+}
+</script>
+</body>
+</html>
